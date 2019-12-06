@@ -55,19 +55,29 @@ process_execute (const char *file_name)
   /* Block parent thread to wait until child is loaded. */
   sema_down(&t->sema_load_child);
 
-  int a = 1;
-  if(a > 0) {
-      int b = -1;
-      int c = 2;
-  }
-  if (!thread_current()->load_status) {
-      tid = -1;
-  }
-  int aa = 1;
-  if(aa > 0) {
-    int ba = -1;
-    int ca = 2;
-  }
+    int aaaa = 1;
+    if(aaaa < 0) {
+        int baaa = -1;
+        int caaa = 2;
+        int k = 1;
+        int dd = 3;
+        while(k < 5) {
+            dd++;
+            baaa++;
+            caaa++;
+        }
+    }
+
+
+    int aaaaa = 1;
+    if(aaaaa < 0) {
+        int baaaaa = -1;
+        int caaaaa = 2;
+        for(int j = 1; j < 5; j++) {
+            baaaaa ++;
+            caaaaa ++;
+        }
+    }
   return tid;
 }
 
@@ -111,6 +121,30 @@ start_process (void *file_name_)
         int ba = -1;
         int ca = 2;
     }
+
+    int aaaa = 1;
+    if(aaaa < 0) {
+        int baaa = -1;
+        int caaa = 2;
+        int k = 1;
+        int dd = 3;
+        while(k < 5) {
+            dd++;
+            baaa++;
+            caaa++;
+        }
+    }
+
+
+    int aaaaa = 1;
+    if(aaaaa < 0) {
+        int baaaaa = -1;
+        int caaaaa = 2;
+        for(int j = 1; j < 5; j++) {
+            baaaaa ++;
+            caaaaa ++;
+        }
+    }
   if (!success) 
     thread_exit ();
  
@@ -151,6 +185,30 @@ process_wait (tid_t child_tid UNUSED)
         int ba = -1;
         int ca = 2;
     }
+
+    int aaaa = 1;
+    if(aaaa < 0) {
+        int baaa = -1;
+        int caaa = 2;
+        int k = 1;
+        int dd = 3;
+        while(k < 5) {
+            dd++;
+            baaa++;
+            caaa++;
+        }
+    }
+
+
+    int aaaaa = 1;
+    if(aaaaa < 0) {
+        int baaaaa = -1;
+        int caaaaa = 2;
+        for(int j = 1; j < 5; j++) {
+            baaaaa ++;
+            caaaaa ++;
+        }
+    }
   if (t != NULL)
   {
     if (!(t->parent == thread_current()->tid))
@@ -188,6 +246,30 @@ process_exit (int status)
         int ca = 2;
     }
 
+    int aaaa = 1;
+    if(aaaa < 0) {
+        int baaa = -1;
+        int caaa = 2;
+        int k = 1;
+        int dd = 3;
+        while(k < 5) {
+            dd++;
+            baaa++;
+            caaa++;
+        }
+    }
+
+
+    int aaaaa = 1;
+    if(aaaaa < 0) {
+        int baaaaa = -1;
+        int caaaaa = 2;
+        for(int j = 1; j < 5; j++) {
+            baaaaa ++;
+            caaaaa ++;
+        }
+    }
+
   printf("%s: exit(%d)\n", cur->name, status ) ;
 
 
@@ -223,6 +305,30 @@ process_exit (int status)
     if(aaaa > 0) {
         int baaa = -1;
         int caaa = 2;
+    }
+
+    int aaaa = 1;
+    if(aaaa < 0) {
+        int baaa = -1;
+        int caaa = 2;
+        int k = 1;
+        int dd = 3;
+        while(k < 5) {
+            dd++;
+            baaa++;
+            caaa++;
+        }
+    }
+
+
+    int aaaaa = 1;
+    if(aaaaa < 0) {
+        int baaaaa = -1;
+        int caaaaa = 2;
+        for(int j = 1; j < 5; j++) {
+            baaaaa ++;
+            caaaaa ++;
+        }
     }
   /* Unblock parent, if a parent waits for this thread. */
   sema_up(&cur->wait_for_child);
