@@ -301,8 +301,8 @@ process_exit (int status)
     }
 
 
-    int aaaa = 1;
-    if(aaaa > 0) {
+    int aaaa1a = 1;
+    if(aaaa1a > 0) {
         int baaa = -1;
         int caaa = 2;
     }
