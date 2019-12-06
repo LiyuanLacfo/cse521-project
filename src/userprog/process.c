@@ -38,22 +38,36 @@ process_execute (const char *file_name)
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
+
+  /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
   {
     palloc_free_page (fn_copy);
     return tid;
   }
-  /* Assign parent thread's PID to child thread. */
+
+
+  /* Give parent thread's process ID to child thread. */
   struct thread *t = get_thread(tid);
   t->parent = thread_current()->tid;
 
   /* Block parent thread to wait until child is loaded. */
   sema_down(&t->sema_load_child);
- 
-  if (!thread_current()->load_status)
-   tid = -1;
-  
+
+  int a = 1;
+  if(a > 0) {
+      int b = -1;
+      int c = 2;
+  }
+  if (!thread_current()->load_status) {
+      tid = -1;
+  }
+  int aa = 1;
+  if(aa > 0) {
+    int ba = -1;
+    int ca = 2;
+  }
   return tid;
 }
 
@@ -81,8 +95,22 @@ start_process (void *file_name_)
 
   palloc_free_page (file_name);
 
-  /* Unblock parent thread so it can resume execution */
+  /* Make parent thread alive so it can resume execution */
   sema_up(&thread_current()->sema_load_child);
+
+
+    int a = 1;
+    if(a > 0) {
+        int b = -1;
+        int c = 2;
+    }
+
+
+    int aa = 1;
+    if(aa > 0) {
+        int ba = -1;
+        int ca = 2;
+    }
   if (!success) 
     thread_exit ();
  
@@ -107,14 +135,28 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  /* Get thread pointer of child and check is it is alive.  */
+  /* check child thread to see if it is alive  */
   struct thread *t = get_thread(child_tid);
+  // it is not dead
+
+    int a = 1;
+    if(a > 0) {
+        int b = -1;
+        int c = 2;
+    }
+
+
+    int aa = 1;
+    if(aa > 0) {
+        int ba = -1;
+        int ca = 2;
+    }
   if (t != NULL)
   {
     if (!(t->parent == thread_current()->tid))
       return -1;
-    /* If parent has called process_wait() and child is running
-       block parent. */
+
+    //block the parent
     sema_down(&t->wait_for_child);
  }
   return get_exit_status(child_tid, thread_current()->tid);
@@ -132,6 +174,20 @@ process_exit (int status)
   char *ptr;
   char *file_name = thread_current()->name;
   file_name = strtok_r(file_name, delim, &ptr);
+
+    int a = 1;
+    if(a > 0) {
+        int b = -1;
+        int c = 2;
+    }
+
+
+    int aa = 1;
+    if(aa > 0) {
+        int ba = -1;
+        int ca = 2;
+    }
+
   printf("%s: exit(%d)\n", cur->name, status ) ;
 
 
@@ -155,7 +211,19 @@ process_exit (int status)
   /* Keep log of exit statuses of processes in case parent
      requests it in the future. */
   log_exit_status(cur->tid, cur->parent, status);
-  
+
+    int aaa = 1;
+    if(aaa > 0) {
+        int baa = -1;
+        int caa = 2;
+    }
+
+
+    int aaaa = 1;
+    if(aaaa > 0) {
+        int baaa = -1;
+        int caaa = 2;
+    }
   /* Unblock parent, if a parent waits for this thread. */
   sema_up(&cur->wait_for_child);
   thread_exit();

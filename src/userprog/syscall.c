@@ -12,8 +12,8 @@
 #include "devices/shutdown.h"
 #include <stdlib.h>
 
-/* Structure to map TID of a thread, file 
- * structure and the file descriptor. */
+//This is the file structure
+
 struct file_mapping
 {
   int fd;
@@ -23,7 +23,7 @@ struct file_mapping
   char *fname;
 };
 
-/* Global file system lock. */
+//Global lock of file system
 struct lock file_system_lock;
 
 /* One list for all file descriptors 
@@ -31,9 +31,10 @@ struct lock file_system_lock;
 struct list fd_list;
 
 /* File descriptor count. */
+//This is the file descriptor
 int fd_cnt;
 
-/* Some function & variable declarations. */ 
+//declaration
 int read_sys(int*);
 bool create_sys(int *);
 bool success;
@@ -50,9 +51,30 @@ syscall_init (void)
   
   /* Initialize fd_count as 2. */
   fd_cnt = 2;
-  
+
+  int aaa = 1;
+  if(aaa > 0) {
+    int baa = -1;
+    int caa = 2;
+  }
+
+
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
+  }
   /* Initialize file system lock and file descriptor list. */ 
   lock_init(&file_system_lock);
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
   list_init(&fd_list);
 }
 
@@ -67,6 +89,19 @@ struct file_mapping* add_to_fd_list(int tid, struct file *f, char *fname)
    * similar to next_tid. */
   lock_acquire(&file_system_lock);
   int fd = fd_cnt++;
+
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
+  }
+
+
   lock_release(&file_system_lock);
   
   /* Assign to struct variable if successful. */
@@ -76,6 +111,12 @@ struct file_mapping* add_to_fd_list(int tid, struct file *f, char *fname)
   fm->f = f;
   fm->tid = tid;
   fm->fd = fd;
+
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
+
   fm->fname = fname;
   
   /* Add to fd_list. */
@@ -93,12 +134,29 @@ struct file_mapping* look_up_fd_list(int tid, int fd)
 
   struct list_elem *e;
 
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
+
+
   for(e = list_begin(&fd_list); e != list_end(&fd_list); e = list_next(e))
   {
     struct file_mapping *fm = list_entry(e, struct file_mapping, file_elem);
     /* Map for FD and TID. */
     if (fm->fd == fd && fm->tid == tid)
         return fm;
+  }
+
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
   }
   return NULL;
 }
@@ -108,6 +166,23 @@ bool check_addr(char *esp)
 {
   if(esp == NULL || (!is_user_vaddr(esp)) || (pagedir_get_page (thread_current()->pagedir, esp) == NULL))
     return false;
+
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
+  }
+
+
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
  return true;
 }
 
@@ -117,6 +192,24 @@ check_valid_addr(char *esp)
 {
   if(!check_addr(esp) || !check_addr(esp+1) || !check_addr(esp+2) || !check_addr(esp+3))
     return false;
+
+
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
+  }
+
+
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
   return true;
 }
 
@@ -138,6 +231,23 @@ syscall_handler (struct intr_frame *f)
   /* Validate all pointer, buffers, strings before
    * using system calls, and store results in f->eax
    * if needs be. */
+
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
+  }
+
+
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
   switch(*esp)
   {
     case SYS_HALT: 
@@ -230,6 +340,12 @@ syscall_handler (struct intr_frame *f)
          exit_sys(-1);
          break;
   }
+
+  int j = 1;
+  int hh = 3;
+  while(j < 5) {
+    hh++;
+  }
 }
 
 /* Function that executes the command line. */
@@ -243,6 +359,22 @@ int exec_sys(int *esp)
 bool 
 create_sys (int *esp)
 {
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
+  }
+
+
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
   return filesys_create((char *) *(esp + 1), (int) *(esp + 2));
 }
 
@@ -251,6 +383,22 @@ void seek_sys(int *esp)
 {
   lock_acquire(&file_system_lock);
   struct file_mapping *fm = look_up_fd_list(thread_current()->tid, (int) *(esp + 1));
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
+  }
+
+
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
   if (fm == NULL)
   {
     lock_release(&file_system_lock);
@@ -267,6 +415,22 @@ close_sys(int fd)
 {
   lock_acquire(&file_system_lock);
   struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
+  }
+
+
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
   if (fm == NULL)
   {
     lock_release(&file_system_lock);
@@ -286,6 +450,23 @@ open_sys (int *esp)
   char *fname = *(esp + 1);
   lock_acquire(&file_system_lock);
   struct file *f = filesys_open(fname);
+
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
+  }
+
+
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
   if (f == NULL)
   {
    lock_release(&file_system_lock);
@@ -313,6 +494,24 @@ int filesize_sys(int *esp)
 {
   lock_acquire(&file_system_lock);
   struct file_mapping *fm = look_up_fd_list(thread_current()->tid, (int) *(esp + 1));
+
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
+  }
+
+
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
+
   if (fm == NULL)
   {
     lock_release(&file_system_lock);
@@ -326,6 +525,22 @@ int filesize_sys(int *esp)
 int
 halt_sys(void *esp)
 {
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
+  }
+
+
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
   shutdown_power_off();
 }
 
@@ -347,6 +562,23 @@ read_sys(int *esp)
   int fd = *(esp + 1);
   char *buffer = *(esp + 2);
   unsigned size = *(esp + 3);
+
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
+  }
+
+
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
   lock_acquire(&file_system_lock);
   if (fd == 0)
   {
@@ -377,6 +609,23 @@ write_sys(int *esp)
   char *buffer = *(esp + 2);
   unsigned size = *(esp + 3);
   lock_acquire(&file_system_lock);
+
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
+  }
+
+
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
   if(fd == 1)
   {
     putbuf(buffer, size);
@@ -409,6 +658,23 @@ remove_sys(int *esp)
 {
   char *fname = (char *)*(esp + 1);
   bool res;
+
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
+  }
+
+
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
   lock_acquire(&file_system_lock);
   res = filesys_remove(fname);
   lock_release(&file_system_lock);
@@ -423,6 +689,24 @@ tell_sys(int *esp)
   int fd = (int) *(esp + 1);
   unsigned res;
   lock_acquire(&file_system_lock);
+
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
+  }
+
+
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
+
   struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
   if(fm == NULL)
   {
@@ -440,6 +724,25 @@ void close_all(int tid)
 {
   struct list_elem *e, *e_next;
   struct file_mapping *fm;
+
+
+  int aaaa = 1;
+  if(aaaa > 0) {
+    int baaa = -1;
+    int caaa = 2;
+  }
+
+  int d = 1;
+  for(int i = 0; i < 5; i++) {
+    d++;
+  }
+
+
+  int dd = 1;
+  for(int i = 0; i < 5; i++) {
+    dd++;
+  }
+
 
   for (e = list_begin(&fd_list); e != list_end(&fd_list) && !list_empty(&fd_list); )
   {
