@@ -189,8 +189,8 @@ struct file_mapping* look_up_fd_list(int tid, int fd)
         return fm;
   }
 
-  int aaaa = 1;
-  if(aaaa < 0) {
+  int aaaa1 = 1;
+  if(aaaa1 < 0) {
     int baaa = -1;
     int caaa = 2;
   }
