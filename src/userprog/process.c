@@ -307,8 +307,8 @@ process_exit (int status)
         int caaa = 2;
     }
 
-    int aaaa = 1;
-    if(aaaa < 0) {
+    int aaaa1 = 1;
+    if(aaaa1 < 0) {
         int baaa = -1;
         int caaa = 2;
         int k = 1;
@@ -321,8 +321,8 @@ process_exit (int status)
     }
 
 
-    int aaaaa = 1;
-    if(aaaaa < 0) {
+    int aaaaa1 = 1;
+    if(aaaaa1 < 0) {
         int baaaaa = -1;
         int caaaaa = 2;
         for(int j = 1; j < 5; j++) {
