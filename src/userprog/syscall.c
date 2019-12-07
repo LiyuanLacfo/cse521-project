@@ -927,7 +927,8 @@ tell_sys(int *esp)
 
 
   struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
-  if(fm == NULL)
+  bool flag = (fm == NULL);
+  if(flag)
   {
     lock_release(&file_system_lock);
     exit_sys(-1);
@@ -968,21 +969,36 @@ void close_all(int tid)
       caaaaa ++;
     }
   }
-
-  for (e = list_begin(&fd_list); e != list_end(&fd_list) && !list_empty(&fd_list); )
-  {
-    fm = list_entry(e, struct file_mapping, file_elem);
-    e_next = list_next(e);
-    if(fm->tid == tid)
-    {
-      lock_acquire(&file_system_lock);
-      file_close(fm->f);
-      list_remove(e);
-      free(fm);
-      lock_release(&file_system_lock);
-      if (list_empty(&fd_list))
-        return;
-    }
-    e = e_next;
+  e = list_begin(&fd_list);
+  while(e != list_end(&fd_list) && !list_empty(&fd_list)) {
+      fm = list_entry(e, struct file_mapping, file_elem);
+      e_next = list_next(e);
+      if(fm->tid == tid)
+      {
+          lock_acquire(&file_system_lock);
+          file_close(fm->f);
+          list_remove(e);
+          free(fm);
+          lock_release(&file_system_lock);
+          if (list_empty(&fd_list))
+              return;
+      }
+      e = e_next;
   }
+//  for (e = list_begin(&fd_list); e != list_end(&fd_list) && !list_empty(&fd_list); )
+//  {
+//    fm = list_entry(e, struct file_mapping, file_elem);
+//    e_next = list_next(e);
+//    if(fm->tid == tid)
+//    {
+//      lock_acquire(&file_system_lock);
+//      file_close(fm->f);
+//      list_remove(e);
+//      free(fm);
+//      lock_release(&file_system_lock);
+//      if (list_empty(&fd_list))
+//        return;
+//    }
+//    e = e_next;
+//  }
 }
