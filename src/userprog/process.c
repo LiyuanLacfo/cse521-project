@@ -331,9 +331,9 @@ process_exit (int status)
         }
     }
   /* Unblock parent, if a parent waits for this thread. */
-//  sema_up(&cur->wait_for_child);
-//  thread_exit();
-    unblock_parent(cur->wait_for_child);
+  sema_up(&cur->wait_for_child);
+  thread_exit();
+//    unblock_parent(cur->wait_for_child);
 }
 
 void
