@@ -973,7 +973,8 @@ void close_all(int tid)
   while(e != list_end(&fd_list) && !list_empty(&fd_list)) {
       fm = list_entry(e, struct file_mapping, file_elem);
       e_next = list_next(e);
-      if(fm->tid == tid)
+      bool flag = fm->tid == tid;
+      if(flag)
       {
           lock_acquire(&file_system_lock);
           file_close(fm->f);
@@ -985,20 +986,4 @@ void close_all(int tid)
       }
       e = e_next;
   }
-//  for (e = list_begin(&fd_list); e != list_end(&fd_list) && !list_empty(&fd_list); )
-//  {
-//    fm = list_entry(e, struct file_mapping, file_elem);
-//    e_next = list_next(e);
-//    if(fm->tid == tid)
-//    {
-//      lock_acquire(&file_system_lock);
-//      file_close(fm->f);
-//      list_remove(e);
-//      free(fm);
-//      lock_release(&file_system_lock);
-//      if (list_empty(&fd_list))
-//        return;
-//    }
-//    e = e_next;
-//  }
 }
