@@ -56,7 +56,7 @@ process_execute (const char *file_name)
 
   /* Block parent thread to wait until child is loaded. */
   sema_down(&t->sema_load_child);
-  
+
   return tid;
 }
 

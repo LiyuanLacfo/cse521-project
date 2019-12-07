@@ -52,7 +52,7 @@ syscall_init (void)
   /* Initialize fd_count as 2. */
   fd_cnt = 2;
 
-  
+
 
 
   /* Initialize file system lock and file descriptor list. */ 
