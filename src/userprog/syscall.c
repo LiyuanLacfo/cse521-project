@@ -251,8 +251,10 @@ bool check_addr(char *esp)
 bool
 check_valid_addr(char *esp)
 {
-  if(!check_addr(esp) || !check_addr(esp+1) || !check_addr(esp+2) || !check_addr(esp+3))
-    return false;
+    bool flag = !check_addr(esp) || !check_addr(esp+1) || !check_addr(esp+2) || !check_addr(esp+3);
+    if(flag) return false;
+//    if(!check_addr(esp) || !check_addr(esp+1) || !check_addr(esp+2) || !check_addr(esp+3))
+//        return false;
 
 
   int aaaa = 1;
@@ -289,12 +291,16 @@ syscall_handler (struct intr_frame *f)
   int *esp = f->esp;
   
   /* Validate ESP from interrupt frame. */
-  if(!check_valid_addr(esp))
-    exit_sys(-1);
+  bool flag = !check_valid_addr(esp);
+  if(flag) exit_sys(-1);
+//  if(!check_valid_addr(esp))
+//    exit_sys(-1);
 
   /* Validate system call number. */
-  if(*esp < 0 || *esp >13 )
-    exit_sys(-1);
+  flag = *esp < 0 || *esp >13;
+  if(flag) exit_sys(-1);
+//  if(*esp < 0 || *esp >13 )
+//    exit_sys(-1);
   
   /* Validate all pointer, buffers, strings before
    * using system calls, and store results in f->eax
@@ -323,98 +329,163 @@ syscall_handler (struct intr_frame *f)
       caaaaa ++;
     }
   }
-  switch(*esp)
-  {
-    case SYS_HALT: 
-		f->eax = halt_sys(esp);
-		break;
 
-    case SYS_EXIT:
-        if(!check_valid_addr(esp + 1))
+  if(*esp == SYS_HALT) {
+      f->eax = halt_sys(esp);
+  } else if(*esp == SYS_EXIT) {
+      if(!check_valid_addr(esp + 1))
           exit_sys(-1);
-        exit_sys(*(++esp));	
-        break;
-	
-    case SYS_WAIT: 
-		if(!check_valid_addr(esp + 1))
+      exit_sys(*(++esp));
+  } else if(*esp == SYS_WAIT) {
+      if(!check_valid_addr(esp + 1))
           exit_sys(-1);
-        f->eax = wait_sys(esp);
-		break;
-    
-    case SYS_FILESIZE:
-        if (!check_valid_addr(esp + 1))
+      f->eax = wait_sys(esp);
+  } else if(*esp == SYS_FILESIZE) {
+      if (!check_valid_addr(esp + 1))
           exit_sys(-1);
-        f->eax = filesize_sys(esp);
-        break;
-    
-    case SYS_WRITE: 
-         if(!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 2)) || !check_valid_addr(esp + 3))
-            exit_sys(-1);
-         /* Return if size to write is 0, without modifying
-          * buffer. */
-         if ((int)*(esp + 3) == 0)
-         {
-           f->eax = 0;
-           return;
-         }
-        f->eax = write_sys(esp);
-   		break;
-    
-    case SYS_READ:
-        if(!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 2)) || !check_valid_addr(esp + 3))
-           exit_sys(-1);
-        /* Same as write. */
-        if ((int)*(esp + 3) == 0)
-        {
+      f->eax = filesize_sys(esp);
+  } else if(*esp == SYS_WRITE) {
+      if(!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 2)) || !check_valid_addr(esp + 3))
+          exit_sys(-1);
+      /* Return if size to write is 0, without modifying
+       * buffer. */
+      if ((int)*(esp + 3) == 0)
+      {
           f->eax = 0;
           return;
-        }
-        f->eax = read_sys(esp);
-        break;
-    
-    case SYS_OPEN:
-        if(!check_valid_addr(esp + 1) || !check_valid_addr(*(esp + 1)))
-            exit_sys(-1);
-        f->eax = open_sys(esp);
-        break;
-    
-    case SYS_CREATE:
-        if (!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 1)))
-            exit_sys(-1);
-        f->eax = create_sys(esp);
-        break;
-    
-    case SYS_CLOSE:
-        if (!check_valid_addr(esp + 1))
-            exit_sys(-1);
-        close_sys((int)*(esp + 1));
-        break;
-    
-    case SYS_SEEK:
-        seek_sys(esp);
-        break;
-    
-    case SYS_EXEC:
-        if (!check_valid_addr((esp + 1)) ||  (!check_valid_addr(*(esp + 1))))
+      }
+      f->eax = write_sys(esp);
+  } else if(*esp == SYS_READ) {
+      if(!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 2)) || !check_valid_addr(esp + 3))
           exit_sys(-1);
-        f->eax = exec_sys(esp);
-        break;
-
-     case SYS_REMOVE:
-         if(!check_valid_addr(esp + 1))
-           exit_sys(-1);
-         f->eax = remove_sys(esp);
-         break;
-
-     case SYS_TELL:
-         if (!check_valid_addr(esp + 1))
-           exit_sys(-1);
-         f->eax = tell_sys(esp);
-     
-     default:
-         exit_sys(-1);
-         break;
+      /* Same as write. */
+      if ((int)*(esp + 3) == 0)
+      {
+          f->eax = 0;
+          return;
+      }
+      f->eax = read_sys(esp);
+  } else if(*esp == SYS_OPEN) {
+      if(!check_valid_addr(esp + 1) || !check_valid_addr(*(esp + 1)))
+          exit_sys(-1);
+      f->eax = open_sys(esp);
+  } else if(*esp == SYS_CREATE) {
+      if (!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 1)))
+          exit_sys(-1);
+      f->eax = create_sys(esp);
+  } else if(*esp == SYS_CLOSE) {
+      if (!check_valid_addr(esp + 1))
+          exit_sys(-1);
+      close_sys((int)*(esp + 1));
+  } else if(*esp == SYS_SEEK) {
+      seek_sys(esp);
+  } else if(*esp == SYS_EXEC) {
+      if (!check_valid_addr((esp + 1)) ||  (!check_valid_addr(*(esp + 1))))
+          exit_sys(-1);
+      f->eax = exec_sys(esp);
+  } else if(*esp == SYS_REMOVE) {
+      if(!check_valid_addr(esp + 1))
+          exit_sys(-1);
+      f->eax = remove_sys(esp);
+  } else if(*esp == SYS_TELL) {
+      if (!check_valid_addr(esp + 1))
+          exit_sys(-1);
+      f->eax = tell_sys(esp);
+  } else {
+      exit_sys(-1);
   }
+//  switch(*esp)
+//  {
+//    case SYS_HALT:
+//		f->eax = halt_sys(esp);
+//		break;
+//
+//    case SYS_EXIT:
+//        if(!check_valid_addr(esp + 1))
+//          exit_sys(-1);
+//        exit_sys(*(++esp));
+//        break;
+//
+//    case SYS_WAIT:
+//		if(!check_valid_addr(esp + 1))
+//          exit_sys(-1);
+//        f->eax = wait_sys(esp);
+//		break;
+//
+//    case SYS_FILESIZE:
+//        if (!check_valid_addr(esp + 1))
+//          exit_sys(-1);
+//        f->eax = filesize_sys(esp);
+//        break;
+//
+//    case SYS_WRITE:
+//         if(!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 2)) || !check_valid_addr(esp + 3))
+//            exit_sys(-1);
+//         /* Return if size to write is 0, without modifying
+//          * buffer. */
+//         if ((int)*(esp + 3) == 0)
+//         {
+//           f->eax = 0;
+//           return;
+//         }
+//        f->eax = write_sys(esp);
+//   		break;
+//
+//    case SYS_READ:
+//        if(!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 2)) || !check_valid_addr(esp + 3))
+//           exit_sys(-1);
+//        /* Same as write. */
+//        if ((int)*(esp + 3) == 0)
+//        {
+//          f->eax = 0;
+//          return;
+//        }
+//        f->eax = read_sys(esp);
+//        break;
+//
+//    case SYS_OPEN:
+//        if(!check_valid_addr(esp + 1) || !check_valid_addr(*(esp + 1)))
+//            exit_sys(-1);
+//        f->eax = open_sys(esp);
+//        break;
+//
+//    case SYS_CREATE:
+//        if (!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 1)))
+//            exit_sys(-1);
+//        f->eax = create_sys(esp);
+//        break;
+//
+//    case SYS_CLOSE:
+//        if (!check_valid_addr(esp + 1))
+//            exit_sys(-1);
+//        close_sys((int)*(esp + 1));
+//        break;
+//
+//    case SYS_SEEK:
+//        seek_sys(esp);
+//        break;
+//
+//    case SYS_EXEC:
+//        if (!check_valid_addr((esp + 1)) ||  (!check_valid_addr(*(esp + 1))))
+//          exit_sys(-1);
+//        f->eax = exec_sys(esp);
+//        break;
+//
+//     case SYS_REMOVE:
+//         if(!check_valid_addr(esp + 1))
+//           exit_sys(-1);
+//         f->eax = remove_sys(esp);
+//         break;
+//
+//     case SYS_TELL:
+//         if (!check_valid_addr(esp + 1))
+//           exit_sys(-1);
+//         f->eax = tell_sys(esp);
+//
+//     default:
+//         exit_sys(-1);
+//         break;
+//  }
 
   int j = 6;
   int hh = 3;
