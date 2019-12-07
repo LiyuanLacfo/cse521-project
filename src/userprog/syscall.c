@@ -183,10 +183,10 @@ struct file_mapping* look_up_fd_list(int tid, int fd)
   e = list_begin(&fd_list);
   while(e != list_end(&fd_list)) {
       struct file_mapping *fm = list_entry(e, struct file_mapping, file_elem);
-      e = list_next(e);
       /* Map for FD and TID. */
       if (fm->fd == fd && fm->tid == tid)
           return fm;
+      e = list_next(e);
   }
 //  for(e = list_begin(&fd_list); e != list_end(&fd_list); e = list_next(e))
 //  {
