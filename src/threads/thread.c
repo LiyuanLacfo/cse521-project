@@ -91,13 +91,20 @@ static tid_t allocate_tid (void);
 struct thread *get_thread(int tid)
 {
   struct list_elem *e;
-  
+  int flag = 0;
+  struct thread *t;
   for (e = list_begin (&all_list); e != list_end (&all_list); e = list_next (e))
   {
-    struct thread *t = list_entry (e, struct thread, allelem);
-    if(t->tid == tid){
-      return t;
+    t = list_entry (e, struct thread, allelem);
+    int this_id = t->tid;
+    
+    if(this_id == tid){
+      flag = 1;
+      break;
     }
+  }
+  if(flag == 1){
+    return t;
   }
   return NULL;
 }

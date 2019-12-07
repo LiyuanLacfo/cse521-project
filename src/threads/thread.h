@@ -87,6 +87,14 @@ struct thread
     enum thread_status status;          /* Thread state. */
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
+#ifdef USERPROG
+    
+    char *executable_name;              
+    uint32_t *pagedir;                  
+    struct semaphore sema_load_child;  
+   
+
+#endif
     int priority;                       /* Priority. */
     int nice;                           /* Nice value. */
     int recent_cpu;                     /* Recent CPU. */
@@ -96,13 +104,11 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 #ifdef USERPROG
-    /* Owned by userprog/process.c. */
-    char *executable_name;              /* File name of executable. */
-    uint32_t *pagedir;                  /* Page directory. */
-    struct semaphore sema_load_child;   /* Semaphore to synchronise parent to wait for child load. */
-    bool load_status;                   /* Load status of child for which parent waits during child load. */
-    tid_t parent;                       /* Parent's thread identifier. */
-    struct semaphore wait_for_child;    /* Semaphore to synchronise parent to wait for child exit. */
+    
+ 
+    bool load_status;                   
+    tid_t parent;                       
+    struct semaphore wait_for_child;    
 
 #endif
 
