@@ -116,37 +116,18 @@ compare (struct list_elem *e1, struct list_elem *e2, void *aux UNUSED)
     
 }
 
+
+
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
    be turned on. */
 void
-timer_sleep (int64_t ticks)
+timer_sleep (int64_t ticks) 
 {
   int64_t start = timer_ticks ();
-  enum intr_level old_level;
-  ASSERT (intr_get_level () == INTR_ON);
-  if (ticks > 0)
-  {
-    struct sleeper_struct *sleeper = malloc(sizeof(struct sleeper_struct));
-    int *priority;
-    
-    struct list_elem *thread_elm = &thread_current()->elem;
-    priority = &thread_current()->priority;
-    
-    /* Use elem, time to wake up and priority to define a sleeping thread. */
-    sleeper->thread_elem = thread_elm;
-    sleeper->ticks = ticks + start;
-    sleeper->priority = priority;
 
-    /* Synchronizing access to sleeper_list. */
-    sema_down(&sema);
-    list_insert_ordered (&sleeper_list, &sleeper->elem, &compare, NULL);   
-    sema_up(&sema);
-   
-    /* Disabling interrupts for thread_block only. */
-    old_level = intr_disable();   
-    thread_block();
-    intr_set_level(old_level);  
-  }
+  ASSERT (intr_get_level () == INTR_ON);
+  while (timer_elapsed (start) < ticks) 
+    thread_yield ();
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -248,21 +229,6 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
-  /* If MLFQS is active, update params accordingly. */
-  if (thread_mlfqs)
-  { 
-    /* Update load_avg and recent_cpu every second. */
-    if (ticks % (TIMER_FREQ) == 0)
-    {
-      update_load_avg ();
-      update_recent_cpu ();
-    }
-    /* Every 4th tick, update priorities. */
-    if (ticks % 4 == 0)
-      update_priorities ();
-  }
-  /* Wake up sleeping threads if necessary. */
-  wake_up();
   thread_tick ();
 }
 

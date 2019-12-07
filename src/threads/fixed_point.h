@@ -1,5 +1,6 @@
 // Using 17.14 floating point format 
 // as given in manual
+typedef int fixed_t;
 #define p 17
 #define q (31 - p)
 #define f (1 << q)
