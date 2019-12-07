@@ -806,18 +806,7 @@ update_thread_priority (struct thread *t)
 void 
 update_priorities()
 {
-  struct list_elem *e;
-  struct thread *t;
-  if (!list_empty (&all_list))
-  {
-    for (e = list_front (&all_list); e != list_end (&all_list); e = list_next(e))
-    {
-      t = list_entry (e, struct thread, allelem);
-      update_thread_priority (t);
-    }
-    /* Sort ready_list after priorities have been altered.  */
-    list_sort (&ready_list, compare_priority, NULL);
-  }
+
 }
 
 /* This function updates recent_cpu of all threads at every multiple of a second and 
@@ -825,35 +814,14 @@ update_priorities()
 void 
 update_recent_cpu ()
 {
-  struct list_elem *e;
-  struct thread *t;
-  if (!list_empty (&all_list))
-  {
-    for (e = list_front (&all_list); e != list_end (&all_list); e = list_next(e))
-    {
-      t = list_entry (e, struct thread, allelem);
-      update_thread_recent_cpu (t);
-    }
-  }
+
 }
 /* This function updates load_avg at every multiple of a second and is also called by the
    timer_interrupt (). */
 void 
 update_load_avg ()
 {
-  /* Ratio (59 / 60) and (1 / 60) are computed. */
-  int ratio1 = div (int_to_fixed_point (59),  int_to_fixed_point (60));
-  int ratio2 = div (int_to_fixed_point (1),  int_to_fixed_point (60));
-  
-  /* ready_threads is the number of threads in ready_list and the 
-   * current thread if it is not the idle thread. */
-  int ready_threads = list_size(&ready_list);
 
-  if (thread_current() != idle_thread)
-    ready_threads++; 
-
-  int temp = add (mult (ratio1, load_avg), mult_fixed_point_int (ratio2, ready_threads));
-  load_avg = temp;
 }
 
 /* Offset of `stack' member within `struct thread'.
