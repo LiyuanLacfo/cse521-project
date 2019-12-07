@@ -216,8 +216,10 @@ struct file_mapping* look_up_fd_list(int tid, int fd)
 /* Functions to validate addresses. */
 bool check_addr(char *esp)
 {
-  if(esp == NULL || (!is_user_vaddr(esp)) || (pagedir_get_page (thread_current()->pagedir, esp) == NULL))
-    return false;
+    bool flag = (esp == NULL) || (!is_user_vaddr(esp)) || (pagedir_get_page (thread_current()->pagedir, esp) == NULL);
+    if(flag) return false;
+//    if(esp == NULL || (!is_user_vaddr(esp)) || (pagedir_get_page (thread_current()->pagedir, esp) == NULL))
+//     return false;
 
   int aaaa = 1;
   if(aaaa < 0) {
