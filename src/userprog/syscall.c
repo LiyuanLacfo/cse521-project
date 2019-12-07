@@ -486,12 +486,6 @@ syscall_handler (struct intr_frame *f)
 //         exit_sys(-1);
 //         break;
 //  }
-
-  int j = 6;
-  int hh = 3;
-  while(j < 5) {
-    hh++;
-  }
 }
 
 /* Function that executes the command line. */
@@ -830,14 +824,16 @@ write_sys(int *esp)
     }
   }
 
-  if(fd == 1)
+  bool flag = (fd == 1);
+  if(flag)
   {
     putbuf(buffer, size);
     lock_release(&file_system_lock);
     return size;
   }
   struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
-  if (fm == NULL)
+  flag = (fm == NULL);
+  if (flag)
   {
     lock_release(&file_system_lock);
     return -1;
@@ -845,7 +841,8 @@ write_sys(int *esp)
 
   /* Check file name to ensure that executables are
    * not written over. */
-  if (strcmp(fm->fname, thread_current()->executable_name) == 0)
+  flag = (strcmp(fm->fname, thread_current()->executable_name) == 0);
+  if (flag)
   {
     lock_release(&file_system_lock);
     return 0;
