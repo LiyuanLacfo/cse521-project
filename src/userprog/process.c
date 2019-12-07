@@ -51,11 +51,11 @@ process_execute (const char *file_name)
 
   /* Give parent thread's process ID to child thread. */
   struct thread *t = get_thread(tid);
-  struct thread *tt = t;
-  tt->parent = thread_current()->tid;
+//  struct thread *tt = t;
+  t->parent = thread_current()->tid;
 
   /* Block parent thread to wait until child is loaded. */
-  sema_down(&tt->sema_load_child);
+  sema_down(&t->sema_load_child);
 
     int aaaa = 1;
     if(aaaa < 0) {
@@ -148,7 +148,7 @@ start_process (void *file_name_)
         }
     }
 
-    bool flag = !success;
+    bool flag = (!success);
   if (flag)
     thread_exit ();
  
@@ -175,7 +175,7 @@ process_wait (tid_t child_tid UNUSED)
 {
   /* check child thread to see if it is alive  */
   struct thread *t = get_thread(child_tid);
-  struct thread *tt = t;
+//  struct thread *tt = t;
   // it is not dead
 
     int a = 1;
@@ -214,14 +214,14 @@ process_wait (tid_t child_tid UNUSED)
             caaaaa ++;
         }
     }
-  if (tt != NULL)
+  if (t != NULL)
   {
-      bool flag = !(tt->parent == thread_current()->tid);
+      bool flag = !(t->parent == thread_current()->tid);
       if (flag)
        return -1;
 
     //block the parent
-    sema_down(&tt->wait_for_child);
+    sema_down(&t->wait_for_child);
  }
   return get_exit_status(child_tid, thread_current()->tid);
 }
@@ -282,7 +282,7 @@ process_exit (int status)
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
-  bool flag = pd != NULL;
+  bool flag = (pd != NULL);
   if (flag)
     {
       cur->pagedir = NULL;
@@ -331,9 +331,9 @@ process_exit (int status)
         }
     }
   /* Unblock parent, if a parent waits for this thread. */
-//  sema_up(&cur->wait_for_child);
-//  thread_exit();
-    unblock_parent(cur->wait_for_child);
+  sema_up(&cur->wait_for_child);
+  thread_exit();
+//    unblock_parent(cur->wait_for_child);
 }
 
 void
