@@ -333,13 +333,13 @@ process_exit (int status)
   /* Unblock parent, if a parent waits for this thread. */
 //  sema_up(&cur->wait_for_child);
 //  thread_exit();
-    unblock_parent(&cur->wait_for_child);
+    unblock_parent(cur->wait_for_child);
 }
 
 void
-unblock_parent(struct semaphore* se)
+unblock_parent(struct semaphore se)
 {
-    sema_up(se);
+    sema_up(&se);
     thread_exit();
 }
 /* Sets up the CPU for running user code in the current
