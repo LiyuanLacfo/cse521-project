@@ -391,7 +391,7 @@ read_sys(int *esp)
 int get_write_size(int fd, char* buff, unsigned sizes) {
     struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
     struct file_description *fk = fm;
-    flag = (fk == NULL);
+    bool flag = (fk == NULL);
     if (flag)
     {
         filesys_release();
