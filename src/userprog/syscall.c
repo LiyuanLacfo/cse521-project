@@ -44,21 +44,30 @@ unsigned tell_sys(int *);
 
 static void syscall_handler (struct intr_frame *);
 
+void init() {
+    /* Initialize fd_count as 2. */
+    fd_cnt = 2;
+
+    /* Initialize file system lock and file descriptor list. */
+    lock_init(&file_system_lock);
+
+    list_init(&fd_list);
+}
+
 void
 syscall_init (void) 
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
   
-  /* Initialize fd_count as 2. */
-  fd_cnt = 2;
+//  /* Initialize fd_count as 2. */
+//  fd_cnt = 2;
+//
+//  /* Initialize file system lock and file descriptor list. */
+//  lock_init(&file_system_lock);
+//
+//  list_init(&fd_list);
 
-
-
-
-  /* Initialize file system lock and file descriptor list. */ 
-  lock_init(&file_system_lock);
-
-  list_init(&fd_list);
+    init();
 }
 
 /* Function that adds a new FD to fd_list. */
