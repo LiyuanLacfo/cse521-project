@@ -96,7 +96,7 @@ int make_fd() {
     return fd;
 }
 
-struct file_description *fm create_fm(struct file *f, int tid, int fd, char *fname) {
+struct file_description* create_fm(struct file *f, int tid, int fd, char *fname) {
     struct file_description *fm = malloc(sizeof(struct file_description));
     if (fm == NULL) return NULL;
     fill_file_desc(f, tid, fd, fname, fm);
