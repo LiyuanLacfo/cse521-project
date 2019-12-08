@@ -10,5 +10,6 @@ void process_activate (void);
 void unblock_parent(struct semaphore se);
 char* get_page();
 tid_t create_new_thread(const char *file_name, char* fn_copy);
+char* get_file_name(char* name, char* delim, char* pt);
 
 #endif /* userprog/process.h */

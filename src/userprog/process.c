@@ -142,18 +142,12 @@ process_wait (tid_t child_tid UNUSED)
     } else {
       return get_exit_status(child_tid, thread_current()->tid);
     }
-//  if (t != NULL && !(t->parent == thread_current()->tid))
-//  {
-//      flag = !(t->parent == thread_current()->tid);
-//      if (flag) return -1;
-//
-//    //block the parent
-//    sema_down(&t->wait_for_child);
-//  }
-//  return get_exit_status(child_tid, thread_current()->tid);
 }
 
 /* Free the current process's resources. */
+char* get_file_name(char* name, char* delim, char* pt) {
+  return strtok_r(name, delim, &pt);
+}
 void
 process_exit (int status)
 {
@@ -164,8 +158,8 @@ process_exit (int status)
   char *delim = " ";
   char *ptr;
   char *file_name = thread_current()->name;
-  file_name = strtok_r(file_name, delim, &ptr);
-
+//  file_name = strtok_r(file_name, delim, &ptr);
+  file_name = get_file_name(file_name, delim, ptr);
   printf("%s: exit(%d)\n", cur->name, status ) ;
 
 
@@ -180,8 +174,6 @@ process_exit (int status)
       pagedir_destroy (pd);
     }
 
-  /* Keep log of exit statuses of processes in case parent
-     requests it in the future. */
   log_exit_status(cur->tid, cur->parent, status);
 
   /* Unblock parent, if a parent waits for this thread. */
