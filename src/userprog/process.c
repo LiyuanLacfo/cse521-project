@@ -73,34 +73,36 @@ process_execute (const char *file_name)
 /* A thread function that loads a user process and starts it
    running. */
 static void
-start_process (void *file_name_)
+start_process (void *file_name)
 {
-  char *file_name = file_name_;
-  struct intr_frame if_;
-  bool success;
+  char *file_name = file_name;
+  struct intr_frame iframe;
 
   /* Initialize interrupt frame and load executable. */
-  memset (&if_, 0, sizeof if_);
-  if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
-  if_.cs = SEL_UCSEG;
-  if_.eflags = FLAG_IF | FLAG_MBS;
-  success = load (file_name, &if_.eip, &if_.esp);
+  memset (&iframe, 0, sizeof iframe);
+//  iframe.gs = iframe.fs = iframe.es = iframe.ds = iframe.ss = SEL_UDSEG;
+  iframe.gs = SEL_UDSEG;
+  iframe.fs = SEL_UDSEG;
+  iframe.es = SEL_UDSEG;
+  iframe.ds = SEL_UDSEG;
+  iframe.ss = SEL_UDSEG;
+  iframe.cs = SEL_UCSEG;
+  iframe.eflags = FLAG_IF | FLAG_MBS;
+
   
   /*  Assign child's load status to the parent thread. */
   struct thread *t = get_thread(thread_current()->parent);
-  t->load_status = success;
-  
-  /* If load failed, quit. */
+
+  t->load_status = load (file_name, &iframe.eip, &iframe.esp);
 
   palloc_free_page (file_name);
 
   /* Make parent thread alive so it can resume execution */
   sema_up(&thread_current()->sema_load_child);
 
-
-    bool flag = (!success);
-  if (flag)
-    thread_exit ();
+  bool successful = load (file_name, &iframe.eip, &iframe.esp);
+  bool flag = (!successful);
+  if (flag) thread_exit ();
  
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
