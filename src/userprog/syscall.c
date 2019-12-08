@@ -72,6 +72,8 @@ void filesys_acquire (void);
 
 void filesys_release (void);
 
+void fill_file_desc(struct file *f, int tid, int fd, char *fname, struct file_description *fm);
+
 void init() {
     fd_cnt = 2;
     /* Initialize file system lock and file descriptor list. */
@@ -86,27 +88,25 @@ syscall_init (void)
     init();
 }
 
-
+int make_fd() {
+    filesys_acquire();
+    int fd = fd_cnt++;
+    filesys_release();
+    return fd;
+}
 struct file_description* fill_fd_list(int tid, struct file *f, char *fname)
 {
 
-  if (tid == TID_ERROR) exit_sys(-1);
+    if (tid == TID_ERROR) exit_sys(-1);
 
-//  lock_acquire(&file_system_lock);
-    filesys_acquire();
-  int fd = fd_cnt++;
-//  lock_release(&file_system_lock);
-    filesys_release();
-  
+//    filesys_acquire();
+//    int fd = fd_cnt++;
+//    filesys_release();
+    int fd = make_fd();
 
-  struct file_description *fm = malloc(sizeof(struct file_description));
-  if (fm == NULL) return NULL;
-  fill_file_desc(f, tid, fd, fname, fm);
-//  fm->f = f;
-//  fm->tid = tid;
-//  fm->fd = fd;
-//  fm->fname = fname;
-
+      struct file_description *fm = malloc(sizeof(struct file_description));
+      if (fm == NULL) return NULL;
+      fill_file_desc(f, tid, fd, fname, fm);
   list_push_back(&fd_list, &fm->file_elem);
   return fm;
 }
