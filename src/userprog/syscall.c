@@ -288,7 +288,7 @@ close_sys(int fd)
 
 int get_fd(struct file* ff, char* fname) {
     struct file_description *fm =  fill_fd_list(thread_current()->tid, ff, fname);
-    flag = fm == NULL;
+    bool flag = fm == NULL;
     if (flag) return -1;
     return fm->fd;
 }
