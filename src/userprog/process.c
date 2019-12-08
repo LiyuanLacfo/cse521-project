@@ -148,12 +148,17 @@ process_wait (tid_t child_tid UNUSED)
 char* get_file_name(char* name, char* delim, char* pt) {
   return strtok_r(name, delim, &pt);
 }
+
+void close_connection(tid_t tid) {
+  close_all(tid);
+}
 void
 process_exit (int status)
 {
   /* Print instructed exit message. */
   struct thread *cur = thread_current ();
-  close_all(cur->tid);
+//  close_all(cur->tid);
+  close_connection(cur->tid);
   uint32_t *pd;
   char *delim = " ";
   char *ptr;
