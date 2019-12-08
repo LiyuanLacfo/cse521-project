@@ -356,6 +356,7 @@ int get_size(int fd, char *buff, unsigned sizes) {
     filesys_release();
     return res;
 }
+
 int
 read_sys(int *esp)
 {
@@ -387,6 +388,29 @@ read_sys(int *esp)
 }
 
 
+int get_write_size(int fd, char* buff, unsigned sizes) {
+    struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
+    struct file_description *fk = fm;
+    flag = (fk == NULL);
+    if (flag)
+    {
+        filesys_release();
+        return -1;
+    }
+
+    flag = (strcmp(fm->fname, thread_current()->executable_name) == 0);
+    if (flag)
+    {
+        filesys_release();
+        return 0;
+    } else {
+        int res = file_write(fk->f, buff, sizes);
+        filesys_release();
+        return res;
+    }
+}
+
+
 int
 write_sys(int *esp)
 {
@@ -408,25 +432,26 @@ write_sys(int *esp)
         return sizes;
     }
 
-    struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
-    struct file_description *fk = fm;
-    flag = (fk == NULL);
-    if (flag)
-    {
-        lock_release(&file_system_lock);
-        return -1;
-    }
-
-    flag = (strcmp(fm->fname, thread_current()->executable_name) == 0);
-    if (flag)
-    {
-        lock_release(&file_system_lock);
-        return 0;
-    } else {
-        int actual_size = file_write(fk->f, buff, sizes);
-        lock_release(&file_system_lock);
-        return actual_size;
-    }
+//    struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
+//    struct file_description *fk = fm;
+//    flag = (fk == NULL);
+//    if (flag)
+//    {
+//        lock_release(&file_system_lock);
+//        return -1;
+//    }
+//
+//    flag = (strcmp(fm->fname, thread_current()->executable_name) == 0);
+//    if (flag)
+//    {
+//        lock_release(&file_system_lock);
+//        return 0;
+//    } else {
+//        int actual_size = file_write(fk->f, buff, sizes);
+//        lock_release(&file_system_lock);
+//        return actual_size;
+//    }
+    return get_write_size(fd, buff, sizes);
 }
 
 /* Function that removes a file. */
