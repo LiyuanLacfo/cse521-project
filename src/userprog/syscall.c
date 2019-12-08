@@ -40,6 +40,8 @@ bool create_sys(int *);
 bool remove_sys(int *);
 unsigned tell_sys(int *);
 
+void delete_fd(struct file_description *fk);
+
 void handle_halt(struct intr_frame *f, int* esp);
 
 void handle_exit(struct intr_frame *f, int* esp);
@@ -108,10 +110,6 @@ struct file_description* fill_fd_list(int tid, struct file *f, char *fname)
 
         if (tid == TID_ERROR) exit_sys(-1);
         int fd = make_fd();
-//        struct file_description *fm = malloc(sizeof(struct file_description));
-//        if (fm == NULL) return NULL;
-//        fill_file_desc(f, tid, fd, fname, fm);
-//        list_push_back(&fd_list, &fm->file_elem);
         return create_fm(f, tid, fd, fname);
 }
 
@@ -252,23 +250,27 @@ create_sys (int *esp)
 
 void seek_sys(int *esp)
 {
-    lock_acquire(&file_system_lock);
+    filesys_acquire();
     struct file_description *fm = seek_fd_list(thread_current()->tid, (int) *(esp + 1));
     bool flag = fm == NULL;
     if (flag)
     {
-        lock_release(&file_system_lock);
-        exit_sys(-1);
+        filesys_release();
+        process_exit(-1);
     }
     file_seek (fm->f, (int) *(esp + 2));
-    lock_release(&file_system_lock);
+    filesys_release();
 }
 
-
+void delete_fd(struct file_description *fk) {
+    file_close(fk->f);
+    list_remove(&fk->file_elem);
+    free(fk);
+}
 void
 close_sys(int fd)
 {
-    lock_acquire(&file_system_lock);
+    filesys_acquire();
     struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
 
     //modify
@@ -277,13 +279,14 @@ close_sys(int fd)
     bool flag = fk == NULL;
     if (flag)
     {
-        lock_release(&file_system_lock);
+        filesys_release();
         return;
     }
-    file_close(fk->f);
-    list_remove(&fk->file_elem);
-    free(fk);
-    lock_release(&file_system_lock);
+//    file_close(fk->f);
+//    list_remove(&fk->file_elem);
+//    free(fk);
+    delete_fd(fk);
+    filesys_release();
 }
 
 
