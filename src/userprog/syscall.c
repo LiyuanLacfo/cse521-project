@@ -425,7 +425,7 @@ tell_sys(int *esp)
     }
     offset = file_tell(fm->f);
     lock_release(&file_system_lock);
-    return res;
+    return offset;
 }
 
 static void
