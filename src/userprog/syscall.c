@@ -309,24 +309,20 @@ open_sys (int *esp)
         return -1;
     }
     filesys_release();
-//    struct file_description *fm =  fill_fd_list(thread_current()->tid, ff, fname);
-//    flag = fm == NULL;
-//    if (flag) return -1;
-//    return fm->fd;
     return get_fd(ff, fname);
 }
 
 
-int
-wait_sys(int *esp)
-{
-    return process_wait((int) *(esp + 1));
-}
+//int
+//wait_sys(int *esp)
+//{
+//    return process_wait((int) *(esp + 1));
+//}
 
 
 int filesize_sys(int *esp)
 {
-    lock_acquire(&file_system_lock);
+    filesys_acquire();
     struct file_description *fm = seek_fd_list(thread_current()->tid, (int) *(esp + 1));
     struct file_description *fk = fm;
 
@@ -334,10 +330,10 @@ int filesize_sys(int *esp)
 
     if (flag)
     {
-        lock_release(&file_system_lock);
+        filesys_release();
         return -1;
     } else {
-        lock_release(&file_system_lock);
+        filesys_release();
     }
     return file_length(fk->f);
 }
@@ -348,6 +344,18 @@ exit_sys(int status)
     process_exit(status);
 }
 
+int get_size(int fd, char *buff, unsigned sizes) {
+    struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
+    struct file_description *fk = fm;
+    if (fk == NULL)
+    {
+        filesys_release();
+        return -1;
+    }
+    int res = file_read(fk->f, buff, sizes);
+    filesys_release();
+    return res;
+}
 int
 read_sys(int *esp)
 {
@@ -359,22 +367,23 @@ read_sys(int *esp)
     char *buff = buffer;
     unsigned  sizes = size;
 
-    lock_acquire(&file_system_lock);
+    filesys_acquire();
     if (fdd == 0)
     {
-        lock_release(&file_system_lock);
+        filesys_release();
         return (int)input_getc();
     }
-    struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
-    struct file_description *fk = fm;
-    if (fk == NULL)
-    {
-        lock_release(&file_system_lock);
-        return -1;
-    }
-    int actual_size = file_read(fk->f, buff, sizes);
-    lock_release(&file_system_lock);
-    return actual_size;
+//    struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
+//    struct file_description *fk = fm;
+//    if (fk == NULL)
+//    {
+//        filesys_release();
+//        return -1;
+//    }
+//    int actual_size = file_read(fk->f, buff, sizes);
+//    filesys_release();
+//    return actual_size;
+    return get_size(fd, buff, sizes);
 }
 
 
