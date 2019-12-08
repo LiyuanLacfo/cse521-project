@@ -360,11 +360,11 @@ int filesize_sys(int *esp)
 //}
 //
 //
-//void
-//exit_sys(int status)
-//{
-//    process_exit(status);
-//}
+void
+exit_sys(int status)
+{
+    process_exit(status);
+}
 
 int
 read_sys(int *esp)
