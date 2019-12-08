@@ -460,18 +460,18 @@ tell_sys(int *esp)
 {
     int fd = (int) *(esp + 1);
     unsigned offset;
-    lock_acquire(&file_system_lock);
+    filesys_acquire();
 
 
     struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
     bool flag = (fm == NULL);
     if(flag)
     {
-        lock_release(&file_system_lock);
+        filesys_release();
         exit_sys(-1);
     }
     offset = file_tell(fm->f);
-    lock_release(&file_system_lock);
+    filesys_release();
     return offset;
 }
 
