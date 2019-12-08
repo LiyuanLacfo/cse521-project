@@ -32,6 +32,7 @@ struct list fd_list;
 int fd_cnt;
 
 //declaration
+bool success;
 //int read_sys(int*);
 //bool create_sys(int *);
 //bool success;

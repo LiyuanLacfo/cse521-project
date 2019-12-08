@@ -1,13 +1,14 @@
 #ifndef USERPROG_SYSCALL_H
 #define USERPROG_SYSCALL_H
 
+#include <stdbool.h>
+
 void syscall_init (void);
 void exit_sys(int);
 void close_all(int);
 
 int read_sys(int*);
 bool create_sys(int *);
-bool success;
 bool remove_sys(int *);
 unsigned tell_sys(int *);
 
