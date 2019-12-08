@@ -380,11 +380,14 @@ read_sys(int *esp)
     lock_acquire(&file_system_lock);
     if (fdd == 0)
     {
-        int i = 0;
-        while(size--)
-            buff[i++] = (void *)input_getc();
+//        int i = 0;
+//        while(size--)
+//            buff[i++] = (void *)input_getc();
+//        lock_release(&file_system_lock);
+//        return i;
+
         lock_release(&file_system_lock);
-        return i;
+        return (int)input_getc();
     }
     struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
     struct file_description *fk = fm;
