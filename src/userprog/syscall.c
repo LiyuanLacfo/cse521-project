@@ -32,11 +32,11 @@ struct list fd_list;
 int fd_cnt;
 
 //declaration
-int read_sys(int*);
-bool create_sys(int *);
-bool success;
-bool remove_sys(int *);
-unsigned tell_sys(int *);
+//int read_sys(int*);
+//bool create_sys(int *);
+//bool success;
+//bool remove_sys(int *);
+//unsigned tell_sys(int *);
 
 static void syscall_handler (struct intr_frame *);
 

@@ -5,6 +5,12 @@ void syscall_init (void);
 void exit_sys(int);
 void close_all(int);
 
+int read_sys(int*);
+bool create_sys(int *);
+bool success;
+bool remove_sys(int *);
+unsigned tell_sys(int *);
+
 void handle_halt(struct intr_frame *f, int* esp);
 
 void handle_exit(struct intr_frame *f, int* esp);
