@@ -282,19 +282,22 @@ close_sys(int fd)
         filesys_release();
         return;
     }
-//    file_close(fk->f);
-//    list_remove(&fk->file_elem);
-//    free(fk);
     delete_fd(fk);
     filesys_release();
 }
 
+int get_fd(struct file* f, char* fname) {
+    struct file_description *fm =  fill_fd_list(thread_current()->tid, ff, fname);
+    flag = fm == NULL;
+    if (flag) return -1;
+    return fm->fd;
+}
 
 int
 open_sys (int *esp)
 {
     char *fname = *(esp + 1);
-    lock_acquire(&file_system_lock);
+    filesys_acquire();
     struct file *f = filesys_open(fname);
     struct file *ff = f;
 
@@ -302,14 +305,15 @@ open_sys (int *esp)
 
     if (flag)
     {
-        lock_release(&file_system_lock);
+        filesys_release();
         return -1;
     }
-    lock_release(&file_system_lock);
-    struct file_description *fm =  fill_fd_list(thread_current()->tid, ff, fname);
-    flag = fm == NULL;
-    if (flag) return -1;
-    return fm->fd;
+    filesys_release();
+//    struct file_description *fm =  fill_fd_list(thread_current()->tid, ff, fname);
+//    flag = fm == NULL;
+//    if (flag) return -1;
+//    return fm->fd;
+    return get_fd(ff, fname);
 }
 
 
