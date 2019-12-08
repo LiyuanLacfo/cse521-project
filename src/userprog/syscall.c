@@ -266,17 +266,6 @@ close_sys(int fd)
     list_remove(&fk->file_elem);
     free(fk);
     lock_release(&file_system_lock);
-
-//    bool flag = fm == NULL;
-//    if (flag)
-//    {
-//        lock_release(&file_system_lock);
-//        return;
-//    }
-//    file_close(fm->f);
-//    list_remove(&fm->file_elem);
-//    free(fm);
-//    lock_release(&file_system_lock);
 }
 
 
@@ -300,19 +289,6 @@ open_sys (int *esp)
     flag = fm == NULL;
     if (flag) return -1;
     return fm->fd;
-
-//    bool flag = f == NULL;
-//
-//    if (flag)
-//    {
-//        lock_release(&file_system_lock);
-//        return -1;
-//    }
-//    lock_release(&file_system_lock);
-//    struct file_description *fm =  fill_fd_list(thread_current()->tid, f, fname);
-//    flag = fm == NULL;
-//    if (flag) return -1;
-//    return fm->fd;
 }
 
 
@@ -339,27 +315,8 @@ int filesize_sys(int *esp)
         lock_release(&file_system_lock);
     }
     return file_length(fk->f);
-
-//    bool flag = fm == NULL;
-//
-//    if (flag)
-//    {
-//        lock_release(&file_system_lock);
-//        return -1;
-//    } else {
-//        lock_release(&file_system_lock);
-//    }
-//    return file_length(fm->f);
 }
 
-/* Function to power off PintOS. */
-//int
-//halt_sys(void *esp)
-//{
-//    shutdown_power_off();
-//}
-//
-//
 void
 exit_sys(int status)
 {
@@ -393,26 +350,6 @@ read_sys(int *esp)
     int actual_size = file_read(fk->f, buff, sizes);
     lock_release(&file_system_lock);
     return actual_size;
-
-
-//    lock_acquire(&file_system_lock);
-//    if (fd == 0)
-//    {
-//        int i = 0;
-//        while(size--)
-//            buffer[i++] = (void *)input_getc();
-//        lock_release(&file_system_lock);
-//        return i;
-//    }
-//    struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
-//    if (fm == NULL)
-//    {
-//        lock_release(&file_system_lock);
-//        return -1;
-//    }
-//    int actual_size = file_read(fm->f, buffer, size);
-//    lock_release(&file_system_lock);
-//    return actual_size;
 }
 
 
@@ -446,44 +383,16 @@ write_sys(int *esp)
         return -1;
     }
 
-//    flag = (strcmp(fm->fname, thread_current()->executable_name) == 0);
-//    if (flag)
-//    {
-//        lock_release(&file_system_lock);
-//        return 0;
-//    }
-
-    int actual_size = file_write(fm->f, buffer, size);
-    lock_release(&file_system_lock);
-    return actual_size;
-
-
-//    bool flag = (fd == 1);
-//    if(flag)
-//    {
-//        putbuf(buffer, size);
-//        lock_release(&file_system_lock);
-//        return size;
-//    }
-//
-//    struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
-//    flag = (fm == NULL);
-//    if (flag)
-//    {
-//        lock_release(&file_system_lock);
-//        return -1;
-//    }
-//
-//    flag = (strcmp(fm->fname, thread_current()->executable_name) == 0);
-//    if (flag)
-//    {
-//        lock_release(&file_system_lock);
-//        return 0;
-//    }
-//
-//    int actual_size = file_write(fm->f, buffer, size);
-//    lock_release(&file_system_lock);
-//    return actual_size;
+    flag = (strcmp(fm->fname, thread_current()->executable_name) == 0);
+    if (flag)
+    {
+        lock_release(&file_system_lock);
+        return 0;
+    } else {
+        int actual_size = file_write(fk->f, buff, sizes);
+        lock_release(&file_system_lock);
+        return actual_size;
+    }
 }
 
 /* Function that removes a file. */
@@ -503,7 +412,7 @@ unsigned
 tell_sys(int *esp)
 {
     int fd = (int) *(esp + 1);
-    unsigned res;
+    unsigned offset;
     lock_acquire(&file_system_lock);
 
 
@@ -514,7 +423,7 @@ tell_sys(int *esp)
         lock_release(&file_system_lock);
         exit_sys(-1);
     }
-    res = file_tell(fm->f);
+    offset = file_tell(fm->f);
     lock_release(&file_system_lock);
     return res;
 }
@@ -585,4 +494,37 @@ void close_all(int tid)
       }
       e = e_next;
   }
+}
+
+static struct file *
+thread_fd_get (int fd)
+{
+    struct thread *curr = thread_current ();
+    struct thread_fd *tfd;
+    struct list_elem *e;
+
+    if (fd < 2 || fd >= curr->max_fd)
+        return NULL;
+    for (e = list_begin (&curr->fd_list); e != list_end (&curr->fd_list);
+         e = list_next (e))
+    {
+        tfd = list_entry (e, struct thread_fd, elem);
+        if (tfd->fd == fd)
+            return tfd->file;
+    }
+    return NULL;
+}
+
+/* Add FILE to fd_list of current thread and return its fd. */
+static int
+thread_fd_insert (struct file *file)
+{
+    struct thread *curr = thread_current ();
+    struct thread_fd *tfd = (struct thread_fd *)
+            malloc (sizeof (struct thread_fd));
+
+    tfd->fd = curr->max_fd++;
+    tfd->file = file;
+    list_push_back (&curr->fd_list, &tfd->elem);
+    return tfd->fd;
 }
