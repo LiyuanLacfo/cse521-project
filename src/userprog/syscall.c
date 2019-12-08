@@ -286,7 +286,7 @@ close_sys(int fd)
     filesys_release();
 }
 
-int get_fd(struct file* f, char* fname) {
+int get_fd(struct file* ff, char* fname) {
     struct file_description *fm =  fill_fd_list(thread_current()->tid, ff, fname);
     flag = fm == NULL;
     if (flag) return -1;
