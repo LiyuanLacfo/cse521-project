@@ -68,6 +68,10 @@ void handle_tell(struct intr_frame *f, int* esp);
 
 static void syscall_handler (struct intr_frame *);
 
+void filesys_acquire (void);
+
+void filesys_release (void);
+
 void init() {
     fd_cnt = 2;
     /* Initialize file system lock and file descriptor list. */
@@ -88,20 +92,30 @@ struct file_description* fill_fd_list(int tid, struct file *f, char *fname)
 
   if (tid == TID_ERROR) exit_sys(-1);
 
-  lock_acquire(&file_system_lock);
+//  lock_acquire(&file_system_lock);
+    filesys_acquire();
   int fd = fd_cnt++;
-  lock_release(&file_system_lock);
+//  lock_release(&file_system_lock);
+    filesys_release();
   
 
   struct file_description *fm = malloc(sizeof(struct file_description));
   if (fm == NULL) return NULL;
-  fm->f = f;
-  fm->tid = tid;
-  fm->fd = fd;
-  fm->fname = fname;
+  fill_file_desc(f, tid, fd, fname, fm);
+//  fm->f = f;
+//  fm->tid = tid;
+//  fm->fd = fd;
+//  fm->fname = fname;
 
   list_push_back(&fd_list, &fm->file_elem);
   return fm;
+}
+
+void fill_file_desc(struct file *f, int tid, int fd, char *fname, struct file_description *fm) {
+    fm->f = f;
+    fm->tid = tid;
+    fm->fd = fd;
+    fm->fname = fname;
 }
 
 struct file_description* seek_fd_list(int tid, int fd)
@@ -528,3 +542,17 @@ void close_all(int tid)
 //    list_push_back (&curr->fd_list, &tfd->elem);
 //    return tfd->fd;
 //}
+
+/* Acquire the filesys_lock to usage file system. */
+void
+filesys_acquire (void)
+{
+    lock_acquire (&file_system_lock);
+}
+
+/* Release the filesys_lock. */
+void
+filesys_release (void)
+{
+    lock_release (&file_system_lock);
+}
