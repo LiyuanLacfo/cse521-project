@@ -152,6 +152,7 @@ char* get_file_name(char* name, char* delim, char* pt) {
 void close_connection(tid_t tid) {
   close_all(tid);
 }
+
 void
 process_exit (int status)
 {
@@ -162,9 +163,9 @@ process_exit (int status)
   uint32_t *pd;
   char *delim = " ";
   char *ptr;
-  char *file_name = thread_current()->name;
-//  file_name = strtok_r(file_name, delim, &ptr);
-  file_name = get_file_name(file_name, delim, ptr);
+//  char *file_name = thread_current()->name;
+  char *file_name = get_file_name(thread_current()->name, delim, ptr);
+//  file_name = get_file_name(file_name, delim, ptr);
   printf("%s: exit(%d)\n", cur->name, status ) ;
 
 

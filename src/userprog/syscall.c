@@ -96,45 +96,26 @@ struct file_mapping* add_to_fd_list(int tid, struct file *f, char *fname)
   int fd = fd_cnt++;
   lock_release(&file_system_lock);
   
-  /* Assign to struct variable if successful. */
+
   struct file_mapping *fm = malloc(sizeof(struct file_mapping));
-  if (fm == NULL)
-      return NULL;
+  if (fm == NULL) return NULL;
   fm->f = f;
   fm->tid = tid;
   fm->fd = fd;
-
-  int dd = 1;
-  int jj = 2;
-  if(jj < 0) {
-    for(int kkk = 1; kkk < 3; kkk++) {
-      dd++;
-    }
-  }
-
   fm->fname = fname;
-  
-  /* Add to fd_list. */
+
   list_push_back(&fd_list, &fm->file_elem);
   return fm;
 }
 
-/* Function that reverse maps FD & TID to file_mapping
- * structure. */
 struct file_mapping* look_up_fd_list(int tid, int fd)
 {
-  /* Again, validate TID. */
-  if (tid == TID_ERROR)
-      exit_sys(-1);
-
+  if (tid == TID_ERROR) exit_sys(-1);
   struct list_elem *e;
-
-
 
   e = list_begin(&fd_list);
   while(e != list_end(&fd_list)) {
       struct file_mapping *fm = list_entry(e, struct file_mapping, file_elem);
-      /* Map for FD and TID. */
       if (fm->fd == fd && fm->tid == tid)
           return fm;
       e = list_next(e);
@@ -148,9 +129,6 @@ bool check_addr(char *esp)
 {
     bool flag = (esp == NULL) || (!is_user_vaddr(esp)) || (pagedir_get_page (thread_current()->pagedir, esp) == NULL);
     if(flag) return false;
-//    if(esp == NULL || (!is_user_vaddr(esp)) || (pagedir_get_page (thread_current()->pagedir, esp) == NULL))
-//     return false;
-
     return true;
 }
 
@@ -160,26 +138,27 @@ check_valid_addr(char *esp)
 {
     bool flag = !check_addr(esp) || !check_addr(esp+1) || !check_addr(esp+2) || !check_addr(esp+3);
     if(flag) return false;
-//    if(!check_addr(esp) || !check_addr(esp+1) || !check_addr(esp+2) || !check_addr(esp+3))
-//        return false;
 
-  return true;
+    return true;
 }
 
 /* The System Call Handler. */
 
 void handle_halt(struct intr_frame *f, int* esp) {
-    f->eax = halt_sys(esp);
+//    f->eax = halt_sys(esp);
+    shutdown_power_off();
 }
 
 void handle_exit(struct intr_frame *f, int* esp) {
     if(!check_valid_addr(esp + 1)) exit_sys(-1);
-    exit_sys(*(++esp));
+    process_exit(*(++esp));
+//    exit_sys(*(++esp));
 }
 
 void handle_wait(struct intr_frame *f, int* esp) {
     if(!check_valid_addr(esp + 1)) exit_sys(-1);
-    f->eax = wait_sys(esp);
+    f->eax = process_wait((int) *(esp + 1));
+//    f->eax = wait_sys(esp);
 }
 
 void handle_file_size(struct intr_frame *f, int* esp) {
@@ -249,6 +228,224 @@ void handle_tell(struct intr_frame *f, int* esp) {
     f->eax = tell_sys(esp);
 }
 
+/* Function that executes the command line. */
+int exec_sys(int *esp)
+{
+    return process_execute((char *) *(esp + 1));
+}
+
+/* Function that creates a file given file name
+ * and size of file. */
+bool
+create_sys (int *esp)
+{
+    return filesys_create((char *) *(esp + 1), (int) *(esp + 2));
+}
+
+/* Function that calls file_seek, given an FD. */
+void seek_sys(int *esp)
+{
+    lock_acquire(&file_system_lock);
+    struct file_mapping *fm = look_up_fd_list(thread_current()->tid, (int) *(esp + 1));
+    bool flag = fm == NULL;
+    if (flag)
+    {
+        lock_release(&file_system_lock);
+        exit_sys(-1);
+    }
+    file_seek (fm->f, (int) *(esp + 2));
+    lock_release(&file_system_lock);
+}
+
+/* Function that closes the given file pointer
+ * and removes FD from fd_list. */
+void
+close_sys(int fd)
+{
+    lock_acquire(&file_system_lock);
+    struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+    bool flag = fm == NULL;
+    if (flag)
+    {
+        lock_release(&file_system_lock);
+        return;
+    }
+    file_close(fm->f);
+    list_remove(&fm->file_elem);
+    free(fm);
+    lock_release(&file_system_lock);
+}
+
+/* Function that opens file titled fname and
+ * allocates an FD by adding to fd_list. */
+int
+open_sys (int *esp)
+{
+    char *fname = *(esp + 1);
+    lock_acquire(&file_system_lock);
+    struct file *f = filesys_open(fname);
+
+    bool flag = f == NULL;
+
+    if (flag)
+    {
+        lock_release(&file_system_lock);
+        return -1;
+    }
+    lock_release(&file_system_lock);
+    struct file_mapping *fm =  add_to_fd_list(thread_current()->tid, f, fname);
+    flag = fm == NULL;
+    if (flag) return -1;
+    return fm->fd;
+}
+
+
+int
+wait_sys(int *esp)
+{
+    return process_wait((int) *(esp + 1));
+}
+
+
+int filesize_sys(int *esp)
+{
+    lock_acquire(&file_system_lock);
+    struct file_mapping *fm = look_up_fd_list(thread_current()->tid, (int) *(esp + 1));
+
+    bool flag = fm == NULL;
+
+    if (flag)
+    {
+        lock_release(&file_system_lock);
+        return -1;
+    } else {
+        lock_release(&file_system_lock);
+    }
+    return file_length(fm->f);
+}
+
+/* Function to power off PintOS. */
+int
+halt_sys(void *esp)
+{
+    shutdown_power_off();
+}
+
+
+/* Close all files opened by the current
+ * thread, and exits. */
+void
+exit_sys(int status)
+{
+    process_exit(status);
+}
+
+/* Function that reads from an FD and
+ * if FD is 1, reads from STDIN, else
+ * from a file. */
+int
+read_sys(int *esp)
+{
+    int fd = *(esp + 1);
+    char *buffer = *(esp + 2);
+    unsigned size = *(esp + 3);
+
+
+    lock_acquire(&file_system_lock);
+    if (fd == 0)
+    {
+        int i = 0;
+        while(size--)
+            buffer[i++] = (void *)input_getc();
+        lock_release(&file_system_lock);
+        return i;
+    }
+    struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+    if (fm == NULL)
+    {
+        lock_release(&file_system_lock);
+        return -1;
+    }
+    int actual_size = file_read(fm->f, buffer, size);
+    lock_release(&file_system_lock);
+    return actual_size;
+}
+
+
+int
+write_sys(int *esp)
+{
+    int fd = *(esp + 1);
+    char *buffer = *(esp + 2);
+    unsigned size = *(esp + 3);
+    lock_acquire(&file_system_lock);
+
+
+    bool flag = (fd == 1);
+    if(flag)
+    {
+        putbuf(buffer, size);
+        lock_release(&file_system_lock);
+        return size;
+    }
+
+    struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+    flag = (fm == NULL);
+    if (flag)
+    {
+        lock_release(&file_system_lock);
+        return -1;
+    }
+
+    flag = (strcmp(fm->fname, thread_current()->executable_name) == 0);
+    if (flag)
+    {
+        lock_release(&file_system_lock);
+        return 0;
+    }
+
+    int actual_size = file_write(fm->f, buffer, size);
+    lock_release(&file_system_lock);
+    return actual_size;
+}
+
+/* Function that removes a file. */
+bool
+remove_sys(int *esp)
+{
+    char *fname = (char *)*(esp + 1);
+    bool res;
+
+
+
+    lock_acquire(&file_system_lock);
+    res = filesys_remove(fname);
+    lock_release(&file_system_lock);
+    return res;
+}
+
+/* Function for tell system call.
+ * Maps FD and calls file_tell */
+unsigned
+tell_sys(int *esp)
+{
+    int fd = (int) *(esp + 1);
+    unsigned res;
+    lock_acquire(&file_system_lock);
+
+
+    struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+    bool flag = (fm == NULL);
+    if(flag)
+    {
+        lock_release(&file_system_lock);
+        exit_sys(-1);
+    }
+    res = file_tell(fm->f);
+    lock_release(&file_system_lock);
+    return res;
+}
+
 static void
 syscall_handler (struct intr_frame *f) 
 {
@@ -260,306 +457,258 @@ syscall_handler (struct intr_frame *f)
   if(flag) exit_sys(-1);
 
   if(*esp == SYS_HALT) {
-//      f->eax = halt_sys(esp);
     handle_halt(f, esp);
   } else if(*esp == SYS_EXIT) {
-//      if(!check_valid_addr(esp + 1))
-//          exit_sys(-1);
-//      exit_sys(*(++esp));
     handle_exit(f, esp);
   } else if(*esp == SYS_WAIT) {
-//      if(!check_valid_addr(esp + 1))
-//          exit_sys(-1);
-//      f->eax = wait_sys(esp);
     handle_wait(f, esp);
   } else if(*esp == SYS_FILESIZE) {
-//      if (!check_valid_addr(esp + 1))
-//          exit_sys(-1);
-//      f->eax = filesize_sys(esp);
     handle_file_size(f, esp);
   } else if(*esp == SYS_WRITE) {
-//      if(!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 2)) || !check_valid_addr(esp + 3))
-//          exit_sys(-1);
-//      /* Return if size to write is 0, without modifying
-//       * buffer. */
-//      if ((int)*(esp + 3) == 0)
-//      {
-//          f->eax = 0;
-//          return;
-//      }
-//      f->eax = write_sys(esp);
     handle_write(f, esp);
   } else if(*esp == SYS_READ) {
-//      if(!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 2)) || !check_valid_addr(esp + 3))
-//          exit_sys(-1);
-//      /* Same as write. */
-//      if ((int)*(esp + 3) == 0)
-//      {
-//          f->eax = 0;
-//          return;
-//      }
-//      f->eax = read_sys(esp);
       handle_read(f, esp);
   } else if(*esp == SYS_OPEN) {
-//      if(!check_valid_addr(esp + 1) || !check_valid_addr(*(esp + 1)))
-//          exit_sys(-1);
-//      f->eax = open_sys(esp);
       handle_open(f, esp);
   } else if(*esp == SYS_CREATE) {
-//      if (!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 1)))
-//          exit_sys(-1);
-//      f->eax = create_sys(esp);
         handle_create(f, esp);
   } else if(*esp == SYS_CLOSE) {
-//      if (!check_valid_addr(esp + 1))
-//          exit_sys(-1);
-//      close_sys((int)*(esp + 1));
         handle_close(f, esp);
   } else if(*esp == SYS_SEEK) {
-//      seek_sys(esp);
         handle_seek(f, esp);
   } else if(*esp == SYS_EXEC) {
-//      if (!check_valid_addr((esp + 1)) ||  (!check_valid_addr(*(esp + 1))))
-//          exit_sys(-1);
-//      f->eax = exec_sys(esp);
         handle_exec(f, esp);
   } else if(*esp == SYS_REMOVE) {
-//      if(!check_valid_addr(esp + 1))
-//          exit_sys(-1);
-//      f->eax = remove_sys(esp);
         handle_remove(f, esp);
   } else if(*esp == SYS_TELL) {
-//      if (!check_valid_addr(esp + 1))
-//          exit_sys(-1);
-//      f->eax = tell_sys(esp);
         handle_tell(f, esp);
   } else {
       exit_sys(-1);
   }
 }
 
-/* Function that executes the command line. */
-int exec_sys(int *esp)
-{
-  return process_execute((char *) *(esp + 1));
-}
-
-/* Function that creates a file given file name
- * and size of file. */
-bool 
-create_sys (int *esp)
-{
-  return filesys_create((char *) *(esp + 1), (int) *(esp + 2));
-}
-
-/* Function that calls file_seek, given an FD. */
-void seek_sys(int *esp)
-{
-  lock_acquire(&file_system_lock);
-  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, (int) *(esp + 1));
-  bool flag = fm == NULL;
-  if (flag)
-  {
-    lock_release(&file_system_lock);
-    exit_sys(-1);
-  }
-  file_seek (fm->f, (int) *(esp + 2));
-  lock_release(&file_system_lock);
-}
-
-/* Function that closes the given file pointer
- * and removes FD from fd_list. */
-void
-close_sys(int fd)
-{
-  lock_acquire(&file_system_lock);
-  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
-  bool flag = fm == NULL;
-  if (flag)
-  {
-    lock_release(&file_system_lock);
-    return;
-  }
-  file_close(fm->f);
-  list_remove(&fm->file_elem);
-  free(fm);
-  lock_release(&file_system_lock);
-}
-
-/* Function that opens file titled fname and
- * allocates an FD by adding to fd_list. */
-int
-open_sys (int *esp)
-{
-  char *fname = *(esp + 1);
-  lock_acquire(&file_system_lock);
-  struct file *f = filesys_open(fname);
-
-  bool flag = f == NULL;
-
-  if (flag)
-  {
-   lock_release(&file_system_lock);
-   return -1;
-  }
-  lock_release(&file_system_lock);
-  struct file_mapping *fm =  add_to_fd_list(thread_current()->tid, f, fname);
-  
-  if (fm == NULL)
-    return -1;
-  
-  return fm->fd;
-}
-
-/* Function that calls process_wait. */
-int 
-wait_sys(int *esp)
-{
-  return process_wait((int) *(esp + 1));
-}
-
-/* Function that returns size of file by
- * mapping FD. */
-int filesize_sys(int *esp)
-{
-  lock_acquire(&file_system_lock);
-  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, (int) *(esp + 1));
-
-  bool flag = fm == NULL;
-
-  if (flag)
-  {
-    lock_release(&file_system_lock);
-    return -1;
-  }
-  lock_release(&file_system_lock);
-  return file_length(fm->f);
-}
-
-/* Function to power off PintOS. */
-int
-halt_sys(void *esp)
-{
-  shutdown_power_off();
-}
-
-
-/* Close all files opened by the current
- * thread, and exits. */
-void
-exit_sys(int status)
-{
-  process_exit(status);
-}
-
-/* Function that reads from an FD and
- * if FD is 1, reads from STDIN, else
- * from a file. */
-int 
-read_sys(int *esp)
-{
-  int fd = *(esp + 1);
-  char *buffer = *(esp + 2);
-  unsigned size = *(esp + 3);
-
-
-  lock_acquire(&file_system_lock);
-  if (fd == 0)
-  {
-    int i = 0;
-    while(size--)
-      buffer[i++] = (void *)input_getc();
-    lock_release(&file_system_lock);
-    return i;
-  }
-  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
-  if (fm == NULL)
-    {
-      lock_release(&file_system_lock);
-      return -1;
-    }
-  int actual_size = file_read(fm->f, buffer, size);
-  lock_release(&file_system_lock);
-  return actual_size;
-}
-
-/* Function that writes to a given FD
- * if FD is 1, writes to console, else
- * the file. */
-int
-write_sys(int *esp)
-{
-  int fd = *(esp + 1);
-  char *buffer = *(esp + 2);
-  unsigned size = *(esp + 3);
-  lock_acquire(&file_system_lock);
-
-
-  bool flag = (fd == 1);
-  if(flag)
-  {
-    putbuf(buffer, size);
-    lock_release(&file_system_lock);
-    return size;
-  }
-  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
-  flag = (fm == NULL);
-  if (flag)
-  {
-    lock_release(&file_system_lock);
-    return -1;
-  }
-
-  /* Check file name to ensure that executables are
-   * not written over. */
-  flag = (strcmp(fm->fname, thread_current()->executable_name) == 0);
-  if (flag)
-  {
-    lock_release(&file_system_lock);
-    return 0;
-  }
-  
-  int actual_size = file_write(fm->f, buffer, size);
-  lock_release(&file_system_lock);
-  return actual_size;
-}
-
-/* Function that removes a file. */
-bool
-remove_sys(int *esp)
-{
-  char *fname = (char *)*(esp + 1);
-  bool res;
-
-
-
-  lock_acquire(&file_system_lock);
-  res = filesys_remove(fname);
-  lock_release(&file_system_lock);
-  return res;
-}
-
-/* Function for tell system call.
- * Maps FD and calls file_tell */
-unsigned
-tell_sys(int *esp)
-{
-  int fd = (int) *(esp + 1);
-  unsigned res;
-  lock_acquire(&file_system_lock);
-
-
-  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
-  bool flag = (fm == NULL);
-  if(flag)
-  {
-    lock_release(&file_system_lock);
-    exit_sys(-1);
-  }
-  res = file_tell(fm->f);
-  lock_release(&file_system_lock);
-  return res;
-}
+///* Function that executes the command line. */
+//int exec_sys(int *esp)
+//{
+//  return process_execute((char *) *(esp + 1));
+//}
+//
+///* Function that creates a file given file name
+// * and size of file. */
+//bool
+//create_sys (int *esp)
+//{
+//  return filesys_create((char *) *(esp + 1), (int) *(esp + 2));
+//}
+//
+///* Function that calls file_seek, given an FD. */
+//void seek_sys(int *esp)
+//{
+//  lock_acquire(&file_system_lock);
+//  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, (int) *(esp + 1));
+//  bool flag = fm == NULL;
+//  if (flag)
+//  {
+//    lock_release(&file_system_lock);
+//    exit_sys(-1);
+//  }
+//  file_seek (fm->f, (int) *(esp + 2));
+//  lock_release(&file_system_lock);
+//}
+//
+///* Function that closes the given file pointer
+// * and removes FD from fd_list. */
+//void
+//close_sys(int fd)
+//{
+//  lock_acquire(&file_system_lock);
+//  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+//  bool flag = fm == NULL;
+//  if (flag)
+//  {
+//    lock_release(&file_system_lock);
+//    return;
+//  }
+//  file_close(fm->f);
+//  list_remove(&fm->file_elem);
+//  free(fm);
+//  lock_release(&file_system_lock);
+//}
+//
+///* Function that opens file titled fname and
+// * allocates an FD by adding to fd_list. */
+//int
+//open_sys (int *esp)
+//{
+//  char *fname = *(esp + 1);
+//  lock_acquire(&file_system_lock);
+//  struct file *f = filesys_open(fname);
+//
+//  bool flag = f == NULL;
+//
+//  if (flag)
+//  {
+//   lock_release(&file_system_lock);
+//   return -1;
+//  }
+//  lock_release(&file_system_lock);
+//  struct file_mapping *fm =  add_to_fd_list(thread_current()->tid, f, fname);
+//
+//  if (fm == NULL)
+//    return -1;
+//
+//  return fm->fd;
+//}
+//
+///* Function that calls process_wait. */
+//int
+//wait_sys(int *esp)
+//{
+//  return process_wait((int) *(esp + 1));
+//}
+//
+///* Function that returns size of file by
+// * mapping FD. */
+//int filesize_sys(int *esp)
+//{
+//  lock_acquire(&file_system_lock);
+//  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, (int) *(esp + 1));
+//
+//  bool flag = fm == NULL;
+//
+//  if (flag)
+//  {
+//    lock_release(&file_system_lock);
+//    return -1;
+//  }
+//  lock_release(&file_system_lock);
+//  return file_length(fm->f);
+//}
+//
+///* Function to power off PintOS. */
+//int
+//halt_sys(void *esp)
+//{
+//  shutdown_power_off();
+//}
+//
+//
+///* Close all files opened by the current
+// * thread, and exits. */
+//void
+//exit_sys(int status)
+//{
+//  process_exit(status);
+//}
+//
+///* Function that reads from an FD and
+// * if FD is 1, reads from STDIN, else
+// * from a file. */
+//int
+//read_sys(int *esp)
+//{
+//  int fd = *(esp + 1);
+//  char *buffer = *(esp + 2);
+//  unsigned size = *(esp + 3);
+//
+//
+//  lock_acquire(&file_system_lock);
+//  if (fd == 0)
+//  {
+//    int i = 0;
+//    while(size--)
+//      buffer[i++] = (void *)input_getc();
+//    lock_release(&file_system_lock);
+//    return i;
+//  }
+//  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+//  if (fm == NULL)
+//    {
+//      lock_release(&file_system_lock);
+//      return -1;
+//    }
+//  int actual_size = file_read(fm->f, buffer, size);
+//  lock_release(&file_system_lock);
+//  return actual_size;
+//}
+//
+///* Function that writes to a given FD
+// * if FD is 1, writes to console, else
+// * the file. */
+//int
+//write_sys(int *esp)
+//{
+//  int fd = *(esp + 1);
+//  char *buffer = *(esp + 2);
+//  unsigned size = *(esp + 3);
+//  lock_acquire(&file_system_lock);
+//
+//
+//  bool flag = (fd == 1);
+//  if(flag)
+//  {
+//    putbuf(buffer, size);
+//    lock_release(&file_system_lock);
+//    return size;
+//  }
+//  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+//  flag = (fm == NULL);
+//  if (flag)
+//  {
+//    lock_release(&file_system_lock);
+//    return -1;
+//  }
+//
+//  /* Check file name to ensure that executables are
+//   * not written over. */
+//  flag = (strcmp(fm->fname, thread_current()->executable_name) == 0);
+//  if (flag)
+//  {
+//    lock_release(&file_system_lock);
+//    return 0;
+//  }
+//
+//  int actual_size = file_write(fm->f, buffer, size);
+//  lock_release(&file_system_lock);
+//  return actual_size;
+//}
+//
+///* Function that removes a file. */
+//bool
+//remove_sys(int *esp)
+//{
+//  char *fname = (char *)*(esp + 1);
+//  bool res;
+//
+//
+//
+//  lock_acquire(&file_system_lock);
+//  res = filesys_remove(fname);
+//  lock_release(&file_system_lock);
+//  return res;
+//}
+//
+///* Function for tell system call.
+// * Maps FD and calls file_tell */
+//unsigned
+//tell_sys(int *esp)
+//{
+//  int fd = (int) *(esp + 1);
+//  unsigned res;
+//  lock_acquire(&file_system_lock);
+//
+//
+//  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+//  bool flag = (fm == NULL);
+//  if(flag)
+//  {
+//    lock_release(&file_system_lock);
+//    exit_sys(-1);
+//  }
+//  res = file_tell(fm->f);
+//  lock_release(&file_system_lock);
+//  return res;
+//}
 
 /* Closes all files and frees memory for a given
  * process. */
