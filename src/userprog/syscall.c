@@ -431,39 +431,27 @@ write_sys(int *esp)
         lock_release(&file_system_lock);
         return sizes;
     }
-
-//    struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
-//    struct file_description *fk = fm;
-//    flag = (fk == NULL);
-//    if (flag)
-//    {
-//        lock_release(&file_system_lock);
-//        return -1;
-//    }
-//
-//    flag = (strcmp(fm->fname, thread_current()->executable_name) == 0);
-//    if (flag)
-//    {
-//        lock_release(&file_system_lock);
-//        return 0;
-//    } else {
-//        int actual_size = file_write(fk->f, buff, sizes);
-//        lock_release(&file_system_lock);
-//        return actual_size;
-//    }
     return get_write_size(fd, buff, sizes);
 }
 
-/* Function that removes a file. */
+bool remove_res(char* fname) {
+    bool res;
+    filesys_acquire();
+    res = filesys_remove(fname);
+    filesys_release();
+    return res;
+}
+
 bool
 remove_sys(int *esp)
 {
     char *fname = (char *)*(esp + 1);
-    bool res;
-    lock_acquire(&file_system_lock);
-    res = filesys_remove(fname);
-    lock_release(&file_system_lock);
-    return res;
+//    bool res;
+//    filesys_acquire();
+//    res = filesys_remove(fname);
+//    filesys_release();
+//    return res;
+    return remove_res(fname);
 }
 
 
