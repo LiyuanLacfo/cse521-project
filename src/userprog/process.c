@@ -29,6 +29,11 @@ static bool load (char *cmdline, void (**eip) (void), void **esp);
 char* get_page() {
   return palloc_get_page(0);
 }
+
+tid_t create_new_thread(const char *file_name, char* fn_copy) {
+  return thread_create(file_name, PRI_DEFAULT, start_process, fn_copy);
+}
+
 tid_t
 process_execute (const char *file_name) 
 {
@@ -46,7 +51,8 @@ process_execute (const char *file_name)
   strlcpy (fn_copy, file_name, PGSIZE);
 
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+//  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = create_new_thread(file_name, fn_copy);
   flag = (tid == TID_ERROR);
   if (flag)
   {
@@ -54,8 +60,6 @@ process_execute (const char *file_name)
     return tid;
   }
 
-
-  /* Give parent thread's process ID to child thread. */
   struct thread *t = get_thread(tid);
 //  struct thread *tt = t;
   t->parent = thread_current()->tid;
