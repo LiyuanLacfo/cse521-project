@@ -23,11 +23,8 @@ struct file_mapping
   char *fname;
 };
 
-//Global lock of file system
 struct lock file_system_lock;
 
-/* One list for all file descriptors 
- * for the entire OS. */
 struct list fd_list;
 
 /* File descriptor count. */
@@ -41,49 +38,30 @@ bool success;
 bool remove_sys(int *);
 unsigned tell_sys(int *);
 
-
 static void syscall_handler (struct intr_frame *);
 
 void init() {
-    /* Initialize fd_count as 2. */
     fd_cnt = 2;
-
     /* Initialize file system lock and file descriptor list. */
     lock_init(&file_system_lock);
-
     list_init(&fd_list);
 }
 
 void
 syscall_init (void) 
 {
-  intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
-  
-//  /* Initialize fd_count as 2. */
-//  fd_cnt = 2;
-//
-//  /* Initialize file system lock and file descriptor list. */
-//  lock_init(&file_system_lock);
-//
-//  list_init(&fd_list);
-
+    intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
     init();
 }
 
-/* Function that adds a new FD to fd_list. */
+
 struct file_mapping* add_to_fd_list(int tid, struct file *f, char *fname)
 {
-  /* Validate TID. */
-  if (tid == TID_ERROR)
-    exit_sys(-1);
-  
-  /* Allocate FD in a synchronized manner;
-   * similar to next_tid. */
+
+  if (tid == TID_ERROR) exit_sys(-1);
+
   lock_acquire(&file_system_lock);
   int fd = fd_cnt++;
-
-
-
   lock_release(&file_system_lock);
   
   /* Assign to struct variable if successful. */
@@ -129,13 +107,6 @@ struct file_mapping* look_up_fd_list(int tid, int fd)
           return fm;
       e = list_next(e);
   }
-//  for(e = list_begin(&fd_list); e != list_end(&fd_list); e = list_next(e))
-//  {
-//    struct file_mapping *fm = list_entry(e, struct file_mapping, file_elem);
-//    /* Map for FD and TID. */
-//    if (fm->fd == fd && fm->tid == tid)
-//        return fm;
-//  }
 
   return NULL;
 }
@@ -164,183 +135,175 @@ check_valid_addr(char *esp)
 }
 
 /* The System Call Handler. */
+
+void handle_halt(struct intr_frame *f, int* esp) {
+    f->eax = halt_sys(esp);
+}
+
+void handle_exit(struct intr_frame *f, int* esp) {
+    if(!check_valid_addr(esp + 1)) exit_sys(-1);
+    exit_sys(*(++esp));
+}
+
+void handle_wait(struct intr_frame *f, int* esp) {
+    if(!check_valid_addr(esp + 1)) exit_sys(-1);
+    f->eax = wait_sys(esp);
+}
+
+void handle_file_size(struct intr_frame *f, int* esp) {
+    if (!check_valid_addr(esp + 1)) exit_sys(-1);
+    f->eax = filesize_sys(esp);
+}
+
+void handle_write(struct intr_frame *f, int* esp) {
+    if(!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 2)) || !check_valid_addr(esp + 3))
+        exit_sys(-1);
+
+    bool flag = (int)*(esp + 3) == 0;
+    if (flag)
+    {
+        f->eax = 0;
+        return;
+    }
+    f->eax = write_sys(esp);
+}
+
+void handle_read(struct intr_frame *f, int* esp) {
+    if(!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 2)) || !check_valid_addr(esp + 3))
+        exit_sys(-1);
+    bool flag = (int)*(esp + 3) == 0;
+    if (flag)
+    {
+        f->eax = 0;
+        return;
+    }
+    f->eax = read_sys(esp);
+}
+
+void handle_open(struct intr_frame *f, int* esp) {
+    if(!check_valid_addr(esp + 1) || !check_valid_addr(*(esp + 1)))
+        exit_sys(-1);
+    f->eax = open_sys(esp);
+}
+
+void handle_create(struct intr_frame *f, int* esp) {
+    if (!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 1)))
+        exit_sys(-1);
+    f->eax = create_sys(esp);
+}
+
+void handle_close(struct intr_frame *f, int* esp) {
+    if (!check_valid_addr(esp + 1)) exit_sys(-1);
+    close_sys((int)*(esp + 1));
+}
+
+void handle_seek(struct intr_frame *f, int* esp) {
+    seek_sys(esp);
+}
+
+void handle_exec(struct intr_frame *f, int* esp) {
+    if (!check_valid_addr((esp + 1)) ||  (!check_valid_addr(*(esp + 1))))
+        exit_sys(-1);
+    f->eax = exec_sys(esp);
+}
+
+void handle_remove(struct intr_frame *f, int* esp) {
+    if(!check_valid_addr(esp + 1)) exit_sys(-1);
+    f->eax = remove_sys(esp);
+}
+
+void handle_tell(struct intr_frame *f, int* esp) {
+    if (!check_valid_addr(esp + 1)) exit_sys(-1);
+    f->eax = tell_sys(esp);
+}
+
 static void
 syscall_handler (struct intr_frame *f) 
 {
   
   int *esp = f->esp;
-  
-  /* Validate ESP from interrupt frame. */
   bool flag = !check_valid_addr(esp);
   if(flag) exit_sys(-1);
-//  if(!check_valid_addr(esp))
-//    exit_sys(-1);
-
-  /* Validate system call number. */
   flag = *esp < 0 || *esp >13;
   if(flag) exit_sys(-1);
-//  if(*esp < 0 || *esp >13 )
-//    exit_sys(-1);
-  
-
-
 
   if(*esp == SYS_HALT) {
-      f->eax = halt_sys(esp);
+//      f->eax = halt_sys(esp);
+    handle_halt(f, esp);
   } else if(*esp == SYS_EXIT) {
-      if(!check_valid_addr(esp + 1))
-          exit_sys(-1);
-      exit_sys(*(++esp));
+//      if(!check_valid_addr(esp + 1))
+//          exit_sys(-1);
+//      exit_sys(*(++esp));
+    handle_exit(f, esp);
   } else if(*esp == SYS_WAIT) {
-      if(!check_valid_addr(esp + 1))
-          exit_sys(-1);
-      f->eax = wait_sys(esp);
+//      if(!check_valid_addr(esp + 1))
+//          exit_sys(-1);
+//      f->eax = wait_sys(esp);
+    handle_wait(f, esp);
   } else if(*esp == SYS_FILESIZE) {
-      if (!check_valid_addr(esp + 1))
-          exit_sys(-1);
-      f->eax = filesize_sys(esp);
+//      if (!check_valid_addr(esp + 1))
+//          exit_sys(-1);
+//      f->eax = filesize_sys(esp);
+    handle_file_size(f, esp);
   } else if(*esp == SYS_WRITE) {
-      if(!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 2)) || !check_valid_addr(esp + 3))
-          exit_sys(-1);
-      /* Return if size to write is 0, without modifying
-       * buffer. */
-      if ((int)*(esp + 3) == 0)
-      {
-          f->eax = 0;
-          return;
-      }
-      f->eax = write_sys(esp);
+//      if(!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 2)) || !check_valid_addr(esp + 3))
+//          exit_sys(-1);
+//      /* Return if size to write is 0, without modifying
+//       * buffer. */
+//      if ((int)*(esp + 3) == 0)
+//      {
+//          f->eax = 0;
+//          return;
+//      }
+//      f->eax = write_sys(esp);
+    handle_write(f, esp);
   } else if(*esp == SYS_READ) {
-      if(!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 2)) || !check_valid_addr(esp + 3))
-          exit_sys(-1);
-      /* Same as write. */
-      if ((int)*(esp + 3) == 0)
-      {
-          f->eax = 0;
-          return;
-      }
-      f->eax = read_sys(esp);
+//      if(!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 2)) || !check_valid_addr(esp + 3))
+//          exit_sys(-1);
+//      /* Same as write. */
+//      if ((int)*(esp + 3) == 0)
+//      {
+//          f->eax = 0;
+//          return;
+//      }
+//      f->eax = read_sys(esp);
+      handle_read(f, esp);
   } else if(*esp == SYS_OPEN) {
-      if(!check_valid_addr(esp + 1) || !check_valid_addr(*(esp + 1)))
-          exit_sys(-1);
-      f->eax = open_sys(esp);
+//      if(!check_valid_addr(esp + 1) || !check_valid_addr(*(esp + 1)))
+//          exit_sys(-1);
+//      f->eax = open_sys(esp);
+      handle_open(f, esp);
   } else if(*esp == SYS_CREATE) {
-      if (!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 1)))
-          exit_sys(-1);
-      f->eax = create_sys(esp);
+//      if (!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 1)))
+//          exit_sys(-1);
+//      f->eax = create_sys(esp);
+        handle_create(f, esp);
   } else if(*esp == SYS_CLOSE) {
-      if (!check_valid_addr(esp + 1))
-          exit_sys(-1);
-      close_sys((int)*(esp + 1));
+//      if (!check_valid_addr(esp + 1))
+//          exit_sys(-1);
+//      close_sys((int)*(esp + 1));
+        handle_close(f, esp);
   } else if(*esp == SYS_SEEK) {
-      seek_sys(esp);
+//      seek_sys(esp);
+        handle_seek(f, esp);
   } else if(*esp == SYS_EXEC) {
-      if (!check_valid_addr((esp + 1)) ||  (!check_valid_addr(*(esp + 1))))
-          exit_sys(-1);
-      f->eax = exec_sys(esp);
+//      if (!check_valid_addr((esp + 1)) ||  (!check_valid_addr(*(esp + 1))))
+//          exit_sys(-1);
+//      f->eax = exec_sys(esp);
+        handle_exec(f, esp);
   } else if(*esp == SYS_REMOVE) {
-      if(!check_valid_addr(esp + 1))
-          exit_sys(-1);
-      f->eax = remove_sys(esp);
+//      if(!check_valid_addr(esp + 1))
+//          exit_sys(-1);
+//      f->eax = remove_sys(esp);
+        handle_remove(f, esp);
   } else if(*esp == SYS_TELL) {
-      if (!check_valid_addr(esp + 1))
-          exit_sys(-1);
-      f->eax = tell_sys(esp);
+//      if (!check_valid_addr(esp + 1))
+//          exit_sys(-1);
+//      f->eax = tell_sys(esp);
+        handle_tell(f, esp);
   } else {
       exit_sys(-1);
   }
-//  switch(*esp)
-//  {
-//    case SYS_HALT:
-//		f->eax = halt_sys(esp);
-//		break;
-//
-//    case SYS_EXIT:
-//        if(!check_valid_addr(esp + 1))
-//          exit_sys(-1);
-//        exit_sys(*(++esp));
-//        break;
-//
-//    case SYS_WAIT:
-//		if(!check_valid_addr(esp + 1))
-//          exit_sys(-1);
-//        f->eax = wait_sys(esp);
-//		break;
-//
-//    case SYS_FILESIZE:
-//        if (!check_valid_addr(esp + 1))
-//          exit_sys(-1);
-//        f->eax = filesize_sys(esp);
-//        break;
-//
-//    case SYS_WRITE:
-//         if(!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 2)) || !check_valid_addr(esp + 3))
-//            exit_sys(-1);
-//         /* Return if size to write is 0, without modifying
-//          * buffer. */
-//         if ((int)*(esp + 3) == 0)
-//         {
-//           f->eax = 0;
-//           return;
-//         }
-//        f->eax = write_sys(esp);
-//   		break;
-//
-//    case SYS_READ:
-//        if(!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 2)) || !check_valid_addr(esp + 3))
-//           exit_sys(-1);
-//        /* Same as write. */
-//        if ((int)*(esp + 3) == 0)
-//        {
-//          f->eax = 0;
-//          return;
-//        }
-//        f->eax = read_sys(esp);
-//        break;
-//
-//    case SYS_OPEN:
-//        if(!check_valid_addr(esp + 1) || !check_valid_addr(*(esp + 1)))
-//            exit_sys(-1);
-//        f->eax = open_sys(esp);
-//        break;
-//
-//    case SYS_CREATE:
-//        if (!check_valid_addr(esp + 1) || !check_valid_addr(esp + 2) || !check_valid_addr(*(esp + 1)))
-//            exit_sys(-1);
-//        f->eax = create_sys(esp);
-//        break;
-//
-//    case SYS_CLOSE:
-//        if (!check_valid_addr(esp + 1))
-//            exit_sys(-1);
-//        close_sys((int)*(esp + 1));
-//        break;
-//
-//    case SYS_SEEK:
-//        seek_sys(esp);
-//        break;
-//
-//    case SYS_EXEC:
-//        if (!check_valid_addr((esp + 1)) ||  (!check_valid_addr(*(esp + 1))))
-//          exit_sys(-1);
-//        f->eax = exec_sys(esp);
-//        break;
-//
-//     case SYS_REMOVE:
-//         if(!check_valid_addr(esp + 1))
-//           exit_sys(-1);
-//         f->eax = remove_sys(esp);
-//         break;
-//
-//     case SYS_TELL:
-//         if (!check_valid_addr(esp + 1))
-//           exit_sys(-1);
-//         f->eax = tell_sys(esp);
-//
-//     default:
-//         exit_sys(-1);
-//         break;
-//  }
 }
 
 /* Function that executes the command line. */
@@ -468,15 +431,6 @@ read_sys(int *esp)
   unsigned size = *(esp + 3);
 
 
-  int aaaaa = 1;
-  if(aaaaa < 0) {
-    int baaaaa = -1;
-    int caaaaa = 2;
-    for(int j = 1; j < 5; j++) {
-      baaaaa ++;
-      caaaaa ++;
-    }
-  }
   lock_acquire(&file_system_lock);
   if (fd == 0)
   {
@@ -582,16 +536,6 @@ void close_all(int tid)
   struct list_elem *e, *e_next;
   struct file_mapping *fm;
 
-
-  int aaaaa = 1;
-  if(aaaaa < 0) {
-    int baaaaa = -1;
-    int caaaaa = 2;
-    for(int j = 1; j < 5; j++) {
-      baaaaa ++;
-      caaaaa ++;
-    }
-  }
   e = list_begin(&fd_list);
   while(e != list_end(&fd_list) && !list_empty(&fd_list)) {
       fm = list_entry(e, struct file_mapping, file_elem);
