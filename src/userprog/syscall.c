@@ -73,7 +73,7 @@ void filesys_acquire (void);
 void filesys_release (void);
 
 void fill_file_desc(struct file *f, int tid, int fd, char *fname, struct file_description *fm);
-struct file_description *fm create_fm(struct file *f, int tid, int fd, char *fname);
+struct file_description* create_fm(struct file *f, int tid, int fd, char *fname);
 
 void init() {
     fd_cnt = 2;
