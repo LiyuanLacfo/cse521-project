@@ -27,13 +27,8 @@ struct lock file_system_lock;
 
 struct list fd_list;
 
-/* File descriptor count. */
 //This is the file descriptor
 int fd_cnt;
-
-//declaration
-//bool success;
-
 
 int read_sys(int*);
 bool create_sys(int *);
@@ -313,12 +308,6 @@ open_sys (int *esp)
 }
 
 
-//int
-//wait_sys(int *esp)
-//{
-//    return process_wait((int) *(esp + 1));
-//}
-
 
 int filesize_sys(int *esp)
 {
@@ -374,16 +363,6 @@ read_sys(int *esp)
         filesys_release();
         return (int)input_getc();
     }
-//    struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
-//    struct file_description *fk = fm;
-//    if (fk == NULL)
-//    {
-//        filesys_release();
-//        return -1;
-//    }
-//    int actual_size = file_read(fk->f, buff, sizes);
-//    filesys_release();
-//    return actual_size;
     return get_size(fd, buff, sizes);
 }
 
@@ -446,11 +425,6 @@ bool
 remove_sys(int *esp)
 {
     char *fname = (char *)*(esp + 1);
-//    bool res;
-//    filesys_acquire();
-//    res = filesys_remove(fname);
-//    filesys_release();
-//    return res;
     return remove_res(fname);
 }
 
