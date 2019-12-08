@@ -91,8 +91,10 @@ start_process (void *file_name_)
 
   
   /*  Assign child's load status to the parent thread. */
-  struct thread *t = get_thread(thread_current()->parent);
   bool successful = load (file_name, &iframe.eip, &iframe.esp);
+
+  struct thread *t = get_thread(thread_current()->parent);
+
   t->load_status = successful;
 
   palloc_free_page (file_name);
@@ -130,30 +132,25 @@ process_wait (tid_t child_tid UNUSED)
 //  struct thread *tt = t;
   // it is not dead
 
-    int a = 1;
-    if(a > 0) {
-        int b = -1;
-        int c = 2;
-    }
-
-
-    int aa = 1;
-    if(aa > 0) {
-        int ba = -1;
-        int ca = 2;
-    }
-
     bool flag = t != NULL;
-  if (flag)
-  {
-      flag = !(t->parent == thread_current()->tid);
-      if (flag)
-       return -1;
-
-    //block the parent
-    sema_down(&t->wait_for_child);
-  }
-  return get_exit_status(child_tid, thread_current()->tid);
+    if(t != NULL && !(t->parent == thread_current()->tid)) {
+      return -1;
+    } else if (t != NULL) {
+      //block the parent
+      sema_down(&t->wait_for_child);
+      return get_exit_status(child_tid, thread_current()->tid);
+    } else {
+      return get_exit_status(child_tid, thread_current()->tid);
+    }
+//  if (t != NULL && !(t->parent == thread_current()->tid))
+//  {
+//      flag = !(t->parent == thread_current()->tid);
+//      if (flag) return -1;
+//
+//    //block the parent
+//    sema_down(&t->wait_for_child);
+//  }
+//  return get_exit_status(child_tid, thread_current()->tid);
 }
 
 /* Free the current process's resources. */
