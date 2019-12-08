@@ -41,13 +41,13 @@ process_execute (const char *file_name)
   fn_copy = get_page();
   bool flag = fn_copy == NULL;
   if (flag) return TID_ERROR;
-  
+
   //assign page
   strlcpy (fn_copy, file_name, PGSIZE);
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
-  bool flag = (tid == TID_ERROR);
+  flag = (tid == TID_ERROR);
   if (flag)
   {
     palloc_free_page (fn_copy);
