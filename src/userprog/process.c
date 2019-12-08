@@ -92,15 +92,15 @@ start_process (void *file_name_)
   
   /*  Assign child's load status to the parent thread. */
   struct thread *t = get_thread(thread_current()->parent);
-
-  t->load_status = load (file_name, &iframe.eip, &iframe.esp);
+  bool successful = load (file_name, &iframe.eip, &iframe.esp);
+  t->load_status = successful;
 
   palloc_free_page (file_name);
 
   /* Make parent thread alive so it can resume execution */
   sema_up(&thread_current()->sema_load_child);
 
-  bool successful = load (file_name, &iframe.eip, &iframe.esp);
+//  bool successful = load (file_name, &iframe.eip, &iframe.esp);
   bool flag = (!successful);
   if (flag) thread_exit ();
  
