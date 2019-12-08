@@ -496,35 +496,35 @@ void close_all(int tid)
   }
 }
 
-static struct file *
-thread_fd_get (int fd)
-{
-    struct thread *curr = thread_current ();
-    struct thread_fd *tfd;
-    struct list_elem *e;
-
-    if (fd < 2 || fd >= curr->max_fd)
-        return NULL;
-    for (e = list_begin (&curr->fd_list); e != list_end (&curr->fd_list);
-         e = list_next (e))
-    {
-        tfd = list_entry (e, struct thread_fd, elem);
-        if (tfd->fd == fd)
-            return tfd->file;
-    }
-    return NULL;
-}
-
-/* Add FILE to fd_list of current thread and return its fd. */
-static int
-thread_fd_insert (struct file *file)
-{
-    struct thread *curr = thread_current ();
-    struct thread_fd *tfd = (struct thread_fd *)
-            malloc (sizeof (struct thread_fd));
-
-    tfd->fd = curr->max_fd++;
-    tfd->file = file;
-    list_push_back (&curr->fd_list, &tfd->elem);
-    return tfd->fd;
-}
+//static struct file *
+//thread_fd_get (int fd)
+//{
+//    struct thread *curr = thread_current ();
+//    struct thread_fd *tfd;
+//    struct list_elem *e;
+//
+//    if (fd < 2 || fd >= curr->max_fd)
+//        return NULL;
+//    for (e = list_begin (&curr->fd_list); e != list_end (&curr->fd_list);
+//         e = list_next (e))
+//    {
+//        tfd = list_entry (e, struct thread_fd, elem);
+//        if (tfd->fd == fd)
+//            return tfd->file;
+//    }
+//    return NULL;
+//}
+//
+///* Add FILE to fd_list of current thread and return its fd. */
+//static int
+//thread_fd_insert (struct file *file)
+//{
+//    struct thread *curr = thread_current ();
+//    struct thread_fd *tfd = (struct thread_fd *)
+//            malloc (sizeof (struct thread_fd));
+//
+//    tfd->fd = curr->max_fd++;
+//    tfd->file = file;
+//    list_push_back (&curr->fd_list, &tfd->elem);
+//    return tfd->fd;
+//}
