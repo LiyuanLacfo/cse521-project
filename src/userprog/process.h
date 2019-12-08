@@ -8,5 +8,6 @@ int process_wait (tid_t);
 void process_exit (int);
 void process_activate (void);
 void unblock_parent(struct semaphore se);
+char* get_page();
 
 #endif /* userprog/process.h */
