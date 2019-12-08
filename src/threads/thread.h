@@ -87,14 +87,17 @@ struct thread
     enum thread_status status;          /* Thread state. */
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
+
 #ifdef USERPROG
     
     char *executable_name;              
     uint32_t *pagedir;                  
-    struct semaphore sema_load_child;  
+    struct semaphore sema_load_child;
+    struct list fd_list;
    
 
 #endif
+
     int priority;                       /* Priority. */
     int nice;                           /* Nice value. */
     int recent_cpu;                     /* Recent CPU. */
@@ -115,6 +118,14 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };
+
+
+struct thread_fd
+{
+    int fd;                             // File descriptor
+    struct file *file;                  // The file
+    struct list_elem elem;              // List element
+};
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
