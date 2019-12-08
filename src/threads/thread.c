@@ -777,14 +777,7 @@ allocate_tid (void)
 void 
 update_thread_recent_cpu (struct thread *t)
 {
-  int recent_cpu_ = t->recent_cpu;
-  /* Compute 2 * load_avg */
-  int load_avg_2x = mult_fixed_point_int (load_avg, 2);
-  /* Compute ratio - (load_avg_2x) / (load_avg_2x + 1) to 
-   * avoid overflow. */
-  int ratio1 = div (load_avg_2x, add_fixed_point_int (load_avg_2x, 1));
-  ratio1 = mult (ratio1, recent_cpu_);
-  t->recent_cpu = add_fixed_point_int (ratio1, t->nice);
+
 }
 
 /* Updates thread priority for given thread context and is
@@ -792,20 +785,7 @@ update_thread_recent_cpu (struct thread *t)
 void 
 update_thread_priority (struct thread *t)
 {
-  /* Priority is not computed for idle thread. */
-  if (t == idle_thread)
-    return;
-  /* Update priority as PRI_MAX - (recent_cpu / 4) - 2 * nice */
-  int recent_cpu_new = t->recent_cpu;
-  int temp = div_fixed_point_int (recent_cpu_new, 4);
-  recent_cpu_new = round_off (temp);
-  t->priority = PRI_MAX - recent_cpu_new  - (t->nice << 1);
 
-  /* Clamp priorities between PRI_MIN and PRI_MAX if needed. */
-  if (t->priority < PRI_MIN)
-    t->priority = PRI_MIN;
-  else if (t->priority > PRI_MAX)
-    t->priority = PRI_MAX;
 }
 
 /* This function updates priorities for all threads and is called every 4 ticks by 
