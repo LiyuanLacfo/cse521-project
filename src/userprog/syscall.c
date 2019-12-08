@@ -14,13 +14,13 @@
 
 //This is the file structure
 
-struct file_mapping
+struct file_description
 {
   int fd;
   int tid;
   struct file *f;
-  struct list_elem file_elem;
   char *fname;
+  struct list_elem file_elem;
 };
 
 struct lock file_system_lock;
@@ -87,7 +87,7 @@ syscall_init (void)
 }
 
 
-struct file_mapping* add_to_fd_list(int tid, struct file *f, char *fname)
+struct file_description* fill_fd_list(int tid, struct file *f, char *fname)
 {
 
   if (tid == TID_ERROR) exit_sys(-1);
@@ -97,7 +97,7 @@ struct file_mapping* add_to_fd_list(int tid, struct file *f, char *fname)
   lock_release(&file_system_lock);
   
 
-  struct file_mapping *fm = malloc(sizeof(struct file_mapping));
+  struct file_description *fm = malloc(sizeof(struct file_description));
   if (fm == NULL) return NULL;
   fm->f = f;
   fm->tid = tid;
@@ -108,19 +108,18 @@ struct file_mapping* add_to_fd_list(int tid, struct file *f, char *fname)
   return fm;
 }
 
-struct file_mapping* look_up_fd_list(int tid, int fd)
+struct file_description* seek_fd_list(int tid, int fd)
 {
   if (tid == TID_ERROR) exit_sys(-1);
   struct list_elem *e;
 
   e = list_begin(&fd_list);
   while(e != list_end(&fd_list)) {
-      struct file_mapping *fm = list_entry(e, struct file_mapping, file_elem);
+      struct file_description *fm = list_entry(e, struct file_description, file_elem);
       if (fm->fd == fd && fm->tid == tid)
           return fm;
       e = list_next(e);
   }
-
   return NULL;
 }
 
@@ -246,7 +245,7 @@ create_sys (int *esp)
 void seek_sys(int *esp)
 {
     lock_acquire(&file_system_lock);
-    struct file_mapping *fm = look_up_fd_list(thread_current()->tid, (int) *(esp + 1));
+    struct file_description *fm = seek_fd_list(thread_current()->tid, (int) *(esp + 1));
     bool flag = fm == NULL;
     if (flag)
     {
@@ -263,7 +262,7 @@ void
 close_sys(int fd)
 {
     lock_acquire(&file_system_lock);
-    struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+    struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
     bool flag = fm == NULL;
     if (flag)
     {
@@ -293,7 +292,7 @@ open_sys (int *esp)
         return -1;
     }
     lock_release(&file_system_lock);
-    struct file_mapping *fm =  add_to_fd_list(thread_current()->tid, f, fname);
+    struct file_description *fm =  fill_fd_list(thread_current()->tid, f, fname);
     flag = fm == NULL;
     if (flag) return -1;
     return fm->fd;
@@ -310,7 +309,7 @@ wait_sys(int *esp)
 int filesize_sys(int *esp)
 {
     lock_acquire(&file_system_lock);
-    struct file_mapping *fm = look_up_fd_list(thread_current()->tid, (int) *(esp + 1));
+    struct file_description *fm = seek_fd_list(thread_current()->tid, (int) *(esp + 1));
 
     bool flag = fm == NULL;
 
@@ -360,7 +359,7 @@ read_sys(int *esp)
         lock_release(&file_system_lock);
         return i;
     }
-    struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+    struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
     if (fm == NULL)
     {
         lock_release(&file_system_lock);
@@ -389,7 +388,7 @@ write_sys(int *esp)
         return size;
     }
 
-    struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+    struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
     flag = (fm == NULL);
     if (flag)
     {
@@ -434,7 +433,7 @@ tell_sys(int *esp)
     lock_acquire(&file_system_lock);
 
 
-    struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+    struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
     bool flag = (fm == NULL);
     if(flag)
     {
@@ -505,7 +504,7 @@ syscall_handler (struct intr_frame *f)
 //void seek_sys(int *esp)
 //{
 //  lock_acquire(&file_system_lock);
-//  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, (int) *(esp + 1));
+//  struct file_description *fm = seek_fd_list(thread_current()->tid, (int) *(esp + 1));
 //  bool flag = fm == NULL;
 //  if (flag)
 //  {
@@ -522,7 +521,7 @@ syscall_handler (struct intr_frame *f)
 //close_sys(int fd)
 //{
 //  lock_acquire(&file_system_lock);
-//  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+//  struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
 //  bool flag = fm == NULL;
 //  if (flag)
 //  {
@@ -552,7 +551,7 @@ syscall_handler (struct intr_frame *f)
 //   return -1;
 //  }
 //  lock_release(&file_system_lock);
-//  struct file_mapping *fm =  add_to_fd_list(thread_current()->tid, f, fname);
+//  struct file_description *fm =  fill_fd_list(thread_current()->tid, f, fname);
 //
 //  if (fm == NULL)
 //    return -1;
@@ -572,7 +571,7 @@ syscall_handler (struct intr_frame *f)
 //int filesize_sys(int *esp)
 //{
 //  lock_acquire(&file_system_lock);
-//  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, (int) *(esp + 1));
+//  struct file_description *fm = seek_fd_list(thread_current()->tid, (int) *(esp + 1));
 //
 //  bool flag = fm == NULL;
 //
@@ -621,7 +620,7 @@ syscall_handler (struct intr_frame *f)
 //    lock_release(&file_system_lock);
 //    return i;
 //  }
-//  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+//  struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
 //  if (fm == NULL)
 //    {
 //      lock_release(&file_system_lock);
@@ -651,7 +650,7 @@ syscall_handler (struct intr_frame *f)
 //    lock_release(&file_system_lock);
 //    return size;
 //  }
-//  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+//  struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
 //  flag = (fm == NULL);
 //  if (flag)
 //  {
@@ -698,7 +697,7 @@ syscall_handler (struct intr_frame *f)
 //  lock_acquire(&file_system_lock);
 //
 //
-//  struct file_mapping *fm = look_up_fd_list(thread_current()->tid, fd);
+//  struct file_description *fm = seek_fd_list(thread_current()->tid, fd);
 //  bool flag = (fm == NULL);
 //  if(flag)
 //  {
@@ -715,11 +714,11 @@ syscall_handler (struct intr_frame *f)
 void close_all(int tid)
 {
   struct list_elem *e, *e_next;
-  struct file_mapping *fm;
+  struct file_description *fm;
 
   e = list_begin(&fd_list);
   while(e != list_end(&fd_list) && !list_empty(&fd_list)) {
-      fm = list_entry(e, struct file_mapping, file_elem);
+      fm = list_entry(e, struct file_description, file_elem);
       e_next = list_next(e);
       bool flag = fm->tid == tid;
       if(flag)
