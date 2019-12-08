@@ -73,9 +73,9 @@ process_execute (const char *file_name)
 /* A thread function that loads a user process and starts it
    running. */
 static void
-start_process (void *file_name)
+start_process (void *file_name_)
 {
-  char *file_name = file_name;
+  char *file_name = file_name_;
   struct intr_frame iframe;
 
   /* Initialize interrupt frame and load executable. */
@@ -110,7 +110,7 @@ start_process (void *file_name)
      arguments on the stack in the form of a `struct intr_frame',
      we just point the stack pointer (%esp) to our stack frame
      and jump to it. */
-  asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
+  asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&iframe) : "memory");
   NOT_REACHED ();
 }
 
