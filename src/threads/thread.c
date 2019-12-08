@@ -122,21 +122,24 @@ struct semaphore create_sema;
 struct lock_holder
 {
 int old_priority;
-int new_priority;
+
 struct thread *held_by;
-struct thread *waiter;
+
+int new_priority;
 struct lock *lock;
 struct list_elem elem;
+struct thread *waiter;
 };
 
 /* structure to hold the exit status of a thread. 
    This struct is part of list exit_list.*/
 struct exit_status
 {
-  tid_t child;
+  
   tid_t parent;
   int status;
   struct list_elem elem;
+  tid_t child;
 };
 
 /* Initializes the threading system by transforming the code
@@ -172,11 +175,12 @@ thread_init (void)
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
-  initial_thread->status = THREAD_RUNNING;
-  initial_thread->tid = allocate_tid ();
-  /* Nice and Recent CPU of init is 0. */
   initial_thread->nice = 0;
+  initial_thread->status = THREAD_RUNNING;
+  
   initial_thread->recent_cpu = 0;
+  initial_thread->tid = allocate_tid ();
+
 }
 
 /* Function to log exit status for a parent and child pair duplet. */
@@ -199,12 +203,17 @@ int get_exit_status(tid_t child_tid, tid_t parent_tid)
   for (e = list_begin (&exit_list); e != list_end (&exit_list); e = list_next (e))
   {
     struct exit_status *ex_stat = list_entry (e, struct exit_status, elem);
-    if (ex_stat->child == child_tid && ex_stat->parent == parent_tid)
+    if (ex_stat->child == child_tid )
     {
-      list_remove(e);
-      int exit_status = ex_stat->status;
-      free(ex_stat);
-      return exit_status;
+      if(ex_stat->parent == parent_tid){
+        list_remove(e);
+        int stt = ex_stat->status;
+        
+        int exit_status = stt;
+        free(ex_stat);
+        return exit_status;
+      }
+      
     }
   }
  return -1;
@@ -239,16 +248,17 @@ thread_tick (void)
   if (t == idle_thread)
     idle_ticks++;
 #ifdef USERPROG
-  else if (t->pagedir != NULL)
+  else if (t->pagedir != NULL){
     user_ticks++;
+  }
+    
 #endif
   else
    {
      kernel_ticks++;
      if (thread_mlfqs)
      {
-       k = add_fixed_point_int (t->recent_cpu, 1);
-       t->recent_cpu = k;
+
      }
    }
   /* Enforce preemption. */
@@ -321,15 +331,6 @@ thread_create (const char *name, int priority,
   sf->ebp = 0;
   if (thread_mlfqs)
   {
-     if (tid > 1)
-     {
-       /* If not init thread, inherit nice and recent_cpu 
-        * from parent thread. */
-       t->nice = thread_get_nice ();
-       t->recent_cpu = thread_current()->recent_cpu;
-       /* Initialize priority based on inherited values. */
-       update_thread_priority (t);
-     }
 
    }
   thread_unblock (t);
@@ -347,8 +348,11 @@ bool
 compare_priority (struct list_elem *e1, struct list_elem *e2, void *aux UNUSED)
 {
  struct thread *s1 = list_entry(e1, struct thread, elem);
+ 
+ int p1 =  s1->priority;
  struct thread *s2 = list_entry(e2, struct thread, elem);
- return  s1->priority > s2->priority;
+ int p2 = s2->priority;
+ return p1 > p2;
 }
 
 
@@ -386,7 +390,6 @@ thread_unblock (struct thread *t)
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
   /* list_push_back (&ready_list, &t->elem); */
-  //make the ready list a sorted list ordered from highest priority to lowest priority
   list_insert_ordered(&ready_list, &t->elem, &compare_priority, NULL);
   t->status = THREAD_READY;
   intr_set_level (old_level);
@@ -401,7 +404,8 @@ preempt_thread()
   if (!list_empty(&ready_list) && thread_current() != idle_thread)
   {
     int priority = list_entry(list_front(&ready_list), struct thread, elem) -> priority;
-    if (priority > thread_current()->priority)
+    int cur_p = thread_current()->priority;
+    if (priority > cur_p)
       thread_yield();
   }
 }
