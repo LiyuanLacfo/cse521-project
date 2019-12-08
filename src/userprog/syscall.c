@@ -73,6 +73,7 @@ void filesys_acquire (void);
 void filesys_release (void);
 
 void fill_file_desc(struct file *f, int tid, int fd, char *fname, struct file_description *fm);
+struct file_description *fm create_fm(struct file *f, int tid, int fd, char *fname);
 
 void init() {
     fd_cnt = 2;
@@ -94,21 +95,24 @@ int make_fd() {
     filesys_release();
     return fd;
 }
+
+struct file_description *fm create_fm(struct file *f, int tid, int fd, char *fname) {
+    struct file_description *fm = malloc(sizeof(struct file_description));
+    if (fm == NULL) return NULL;
+    fill_file_desc(f, tid, fd, fname, fm);
+    list_push_back(&fd_list, &fm->file_elem);
+    return fm;
+}
 struct file_description* fill_fd_list(int tid, struct file *f, char *fname)
 {
 
-    if (tid == TID_ERROR) exit_sys(-1);
-
-//    filesys_acquire();
-//    int fd = fd_cnt++;
-//    filesys_release();
-    int fd = make_fd();
-
-      struct file_description *fm = malloc(sizeof(struct file_description));
-      if (fm == NULL) return NULL;
-      fill_file_desc(f, tid, fd, fname, fm);
-  list_push_back(&fd_list, &fm->file_elem);
-  return fm;
+        if (tid == TID_ERROR) exit_sys(-1);
+        int fd = make_fd();
+//        struct file_description *fm = malloc(sizeof(struct file_description));
+//        if (fm == NULL) return NULL;
+//        fill_file_desc(f, tid, fd, fname, fm);
+//        list_push_back(&fd_list, &fm->file_elem);
+        return create_fm(f, tid, fd, fname);
 }
 
 void fill_file_desc(struct file *f, int tid, int fd, char *fname, struct file_description *fm) {
